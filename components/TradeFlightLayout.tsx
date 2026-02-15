@@ -192,13 +192,33 @@ export default function TradeFlightLayout() {
                   Point {index + 1}
                 </span>
 
-                <Input
+                {/* <Input
                   type="number"
                   value={point.value}
                   onChange={(e) =>
                     updatePoint(index, "value", e.target.value)
                   }
-                />
+                /> */}
+                <Input
+  type="text"
+  inputMode="decimal"
+  value={point.value === 0 ? "" : point.value}
+  onChange={(e) => {
+    const raw = e.target.value;
+
+    // Allow empty input (temporarily)
+    if (raw === "") {
+      updatePoint(index, "value", "0");
+      return;
+    }
+
+    // Allow only valid decimal numbers
+    if (/^\d*\.?\d*$/.test(raw)) {
+      updatePoint(index, "value", raw);
+    }
+  }}
+/>
+
 
                 <Input
                   type="time"
