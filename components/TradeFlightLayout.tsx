@@ -14,9 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import ReusableCanvas, {
-  ReusableCanvasHandle,
-} from "./ReusableCanvas";
+import ReusableCanvas, { ReusableCanvasHandle } from "./ReusableCanvas";
 
 type Point = {
   value: number;
@@ -67,8 +65,8 @@ export default function TradeFlightLayout() {
   const [generatedConfig, setGeneratedConfig] = useState<any>(null);
 
   /* ----------------------------
-     Validate Times
-  ----------------------------- */
+       Validate Times
+    ----------------------------- */
   const validateTimes = (updatedPoints: Point[]) => {
     for (let i = 0; i < updatedPoints.length; i++) {
       if (!updatedPoints[i].time) {
@@ -82,7 +80,7 @@ export default function TradeFlightLayout() {
 
         if (current <= prev) {
           setTimeError(
-            "Each time must be strictly later than the previous one."
+            "Each time must be strictly later than the previous one.",
           );
           return false;
         }
@@ -96,7 +94,7 @@ export default function TradeFlightLayout() {
   const updatePoint = (
     index: number,
     field: "value" | "time",
-    value: string
+    value: string,
   ) => {
     const updated = [...points];
 
@@ -191,45 +189,32 @@ export default function TradeFlightLayout() {
                 <span className="text-sm text-zinc-500 md:text-center">
                   Point {index + 1}
                 </span>
-
-                {/* <Input
-                  type="number"
-                  value={point.value}
-                  onChange={(e) =>
-                    updatePoint(index, "value", e.target.value)
-                  }
-                /> */}
                 <Input
-  type="text"
-  inputMode="decimal"
-  value={point.value === 0 ? "" : point.value}
-  onChange={(e) => {
-    const raw = e.target.value;
+                  type="text"
+                  inputMode="decimal"
+                  value={point.value === 0 ? "" : point.value}
+                  onChange={(e) => {
+                    const raw = e.target.value;
 
-    // Allow empty input (temporarily)
-    if (raw === "") {
-      updatePoint(index, "value", "0");
-      return;
-    }
+                    // Allow empty input (temporarily)
+                    if (raw === "") {
+                      updatePoint(index, "value", "0");
+                      return;
+                    }
 
-    // Allow only valid decimal numbers
-    if (/^\d*\.?\d*$/.test(raw)) {
-      updatePoint(index, "value", raw);
-    }
-  }}
-/>
-
+                    // Allow only valid decimal numbers
+                    if (/^\d*\.?\d*$/.test(raw)) {
+                      updatePoint(index, "value", raw);
+                    }
+                  }}
+                />
 
                 <Input
                   type="time"
                   value={point.time}
-                  onChange={(e) =>
-                    updatePoint(index, "time", e.target.value)
-                  }
+                  onChange={(e) => updatePoint(index, "time", e.target.value)}
                   className={
-                    isInvalid
-                      ? "border-red-500 focus-visible:ring-red-500"
-                      : ""
+                    isInvalid ? "border-red-500 focus-visible:ring-red-500" : ""
                   }
                 />
 
@@ -248,9 +233,7 @@ export default function TradeFlightLayout() {
             );
           })}
 
-          {timeError && (
-            <p className="text-sm text-red-500">{timeError}</p>
-          )}
+          {timeError && <p className="text-sm text-red-500">{timeError}</p>}
 
           <Button
             variant="secondary"
