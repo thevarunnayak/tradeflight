@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import ReusableCanvas, { ReusableCanvasHandle } from "./ReusableCanvas";
+import ReusableCanvas, {
+  ReusableCanvasHandle,
+} from "./ReusableCanvas";
 
 type Point = {
   value: number;
@@ -51,6 +53,9 @@ export default function TradeFlightLayout() {
   const [description, setDescription] = useState("");
   const [timeError, setTimeError] = useState<string | null>(null);
 
+  const [isRecording, setIsRecording] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+
   const [points, setPoints] = useState<Point[]>([
     { value: 10, time: "09:00" },
     { value: 10, time: "09:05" },
@@ -77,7 +82,7 @@ export default function TradeFlightLayout() {
 
         if (current <= prev) {
           setTimeError(
-            "Each time must be strictly later than the previous one.",
+            "Each time must be strictly later than the previous one."
           );
           return false;
         }
@@ -88,13 +93,10 @@ export default function TradeFlightLayout() {
     return true;
   };
 
-  /* ----------------------------
-     Update Point
-  ----------------------------- */
   const updatePoint = (
     index: number,
     field: "value" | "time",
-    value: string,
+    value: string
   ) => {
     const updated = [...points];
 
@@ -105,7 +107,6 @@ export default function TradeFlightLayout() {
     if (field === "time") {
       updated[index].time = value;
 
-      // Auto adjust second point if first changes
       if (index === 0 && updated[1]) {
         updated[1].time = addFiveMinutes(value);
       }
@@ -115,9 +116,6 @@ export default function TradeFlightLayout() {
     setPoints(updated);
   };
 
-  /* ----------------------------
-     Add Point
-  ----------------------------- */
   const addPoint = () => {
     if (timeError) return;
 
@@ -140,9 +138,6 @@ export default function TradeFlightLayout() {
     setPoints(updated);
   };
 
-  /* ----------------------------
-     Generate
-  ----------------------------- */
   const handleGenerate = () => {
     if (timeError) return;
 
@@ -163,17 +158,14 @@ export default function TradeFlightLayout() {
 
   return (
     <div className="space-y-8 p-6 md:p-8">
-      {/* CONTROLS */}
       <Card className="p-6 space-y-6 bg-white border border-zinc-200 shadow-sm">
         <h2 className="text-xl font-semibold">Trade Flight Controls</h2>
 
-        {/* Title */}
         <div className="space-y-2">
           <Label>Title (optional)</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        {/* Description */}
         <div className="space-y-2">
           <Label>Description (optional)</Label>
           <Textarea
@@ -182,7 +174,6 @@ export default function TradeFlightLayout() {
           />
         </div>
 
-        {/* Points */}
         <div className="space-y-4">
           <Label>Points</Label>
 
@@ -195,35 +186,33 @@ export default function TradeFlightLayout() {
             return (
               <div
                 key={index}
-                className="
-                  grid gap-3 items-center
-                  grid-cols-1
-                  md:grid-cols-[60px_1fr_1fr_120px]
-                "
+                className="grid gap-3 items-center grid-cols-1 md:grid-cols-[60px_1fr_1fr_120px]"
               >
-                {/* Index */}
                 <span className="text-sm text-zinc-500 md:text-center">
                   Point {index + 1}
                 </span>
 
-                {/* Value */}
                 <Input
                   type="number"
                   value={point.value}
-                  onChange={(e) => updatePoint(index, "value", e.target.value)}
-                />
-
-                {/* Time */}
-                <Input
-                  type="time"
-                  value={point.time}
-                  onChange={(e) => updatePoint(index, "time", e.target.value)}
-                  className={
-                    isInvalid ? "border-red-500 focus-visible:ring-red-500" : ""
+                  onChange={(e) =>
+                    updatePoint(index, "value", e.target.value)
                   }
                 />
 
-                {/* Delete */}
+                <Input
+                  type="time"
+                  value={point.time}
+                  onChange={(e) =>
+                    updatePoint(index, "time", e.target.value)
+                  }
+                  className={
+                    isInvalid
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                  }
+                />
+
                 {index >= 2 && (
                   <Button
                     variant="destructive"
@@ -239,7 +228,9 @@ export default function TradeFlightLayout() {
             );
           })}
 
-          {timeError && <p className="text-sm text-red-500">{timeError}</p>}
+          {timeError && (
+            <p className="text-sm text-red-500">{timeError}</p>
+          )}
 
           <Button
             variant="secondary"
@@ -251,7 +242,6 @@ export default function TradeFlightLayout() {
           </Button>
         </div>
 
-        {/* Duration */}
         <div className="space-y-2">
           <Label>Duration (seconds)</Label>
           <Input
@@ -262,7 +252,6 @@ export default function TradeFlightLayout() {
           />
         </div>
 
-        {/* Aspect Ratio */}
         <div className="space-y-2">
           <Label>Aspect Ratio</Label>
           <Select value={aspectRatio} onValueChange={setAspectRatio}>
@@ -283,31 +272,43 @@ export default function TradeFlightLayout() {
         </Button>
       </Card>
 
-      {/* PREVIEW */}
       <Card className="p-6 md:p-8 bg-white border border-zinc-200 shadow-sm flex flex-col items-center">
         {generatedConfig ? (
           <>
             <ReusableCanvas ref={canvasRef} {...generatedConfig} />
 
-            <div
-              className="
-              flex flex-col gap-4 mt-6 w-full max-w-md
-              md:flex-row
-            "
-            >
+            <div className="flex flex-col gap-4 mt-6 w-full max-w-md md:flex-row">
               <Button
                 className="flex-1"
-                onClick={() => canvasRef.current?.startRecording()}
+                disabled={isRecording || isConverting}
+                onClick={async () => {
+                  if (!canvasRef.current) return;
+                  setIsRecording(true);
+                  try {
+                    await canvasRef.current.startRecording();
+                  } finally {
+                    setIsRecording(false);
+                  }
+                }}
               >
-                Download WebM
+                {isRecording ? "Recording..." : "Download WebM"}
               </Button>
 
               <Button
                 variant="secondary"
                 className="flex-1"
-                onClick={() => canvasRef.current?.downloadMp4()}
+                disabled={isRecording || isConverting}
+                onClick={async () => {
+                  if (!canvasRef.current) return;
+                  setIsConverting(true);
+                  try {
+                    await canvasRef.current.downloadMp4();
+                  } finally {
+                    setIsConverting(false);
+                  }
+                }}
               >
-                Download MP4
+                {isConverting ? "Converting..." : "Download MP4"}
               </Button>
             </div>
           </>

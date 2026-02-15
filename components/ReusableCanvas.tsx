@@ -20,8 +20,8 @@ interface ReusableCanvasProps {
 }
 
 export interface ReusableCanvasHandle {
-  startRecording: () => void;
-  downloadMp4: () => void;
+  startRecording: () => Promise<void>;
+  downloadMp4: () => Promise<void>;
 }
 
 const ratioMap: Record<string, { width: number; height: number }> = {
@@ -386,77 +386,168 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
       return `${safeTitle}-${timestamp}.${ext}`;
     };
 
-    useImperativeHandle(ref, () => ({
-      startRecording() {
-        const toastId = toast.loading("Recording animation");
+      useImperativeHandle(ref, () => ({
+    async startRecording() {
+      const toastId = toast.loading(
+        "Recording animation..."
+      );
 
-        recordAnimation(true)
-          .then(() => {
-            toast.success("WebM Downloaded", {
-              id: toastId,
-            });
-          })
-          .catch(() => {
-            toast.error("Recording Failed", {
-              id: toastId,
-            });
-          });
-      },
+      try {
+        await recordAnimation(true);
+        toast.success("WebM Downloaded", {
+          id: toastId,
+        });
+      } catch {
+        toast.error("Recording Failed", {
+          id: toastId,
+        });
+      }
+    },
 
-      async downloadMp4() {
-        const toastId = toast.loading("Recording animation");
+    async downloadMp4() {
+      const toastId = toast.loading(
+        "Recording animation..."
+      );
 
-        try {
-          const webmBlob = await recordAnimation(false);
+      try {
+        const webmBlob =
+          await recordAnimation(false);
 
-          toast.loading("Preparing video engine...", { id: toastId });
+        toast.loading(
+          "Preparing engine...",
+          { id: toastId }
+        );
 
-          const ffmpeg = ffmpegRef.current;
+        const ffmpeg = ffmpegRef.current;
 
-          if (!ffmpeg.loaded) {
-            await ffmpeg.load();
-          }
+        if (!ffmpeg.loaded)
+          await ffmpeg.load();
 
-          toast.loading("Converting to MP4...", { id: toastId });
+        toast.loading(
+          "Converting to MP4...",
+          { id: toastId }
+        );
 
-          await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
+        await ffmpeg.writeFile(
+          "input.webm",
+          await fetchFile(webmBlob)
+        );
 
-          await ffmpeg.exec([
-            "-i",
-            "input.webm",
-            "-c:v",
-            "libx264",
-            "-preset",
-            "ultrafast",
-            "output.mp4",
-          ]);
+        await ffmpeg.exec([
+          "-i",
+          "input.webm",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "ultrafast",
+          "output.mp4",
+        ]);
 
-          const data = await ffmpeg.readFile("output.mp4");
+        const data =
+          await ffmpeg.readFile("output.mp4");
 
-          if (typeof data === "string") throw new Error("Unexpected string");
+        if (typeof data === "string")
+          throw new Error();
 
-          const buffer = new Uint8Array(data).slice().buffer;
+        const mp4Blob = new Blob(
+          [new Uint8Array(data)],
+          { type: "video/mp4" }
+        );
 
-          const mp4Blob = new Blob([buffer], {
-            type: "video/mp4",
-          });
+        const url =
+          URL.createObjectURL(mp4Blob);
 
-          const url = URL.createObjectURL(mp4Blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = generateFileName("mp4");
-          a.click();
+        const a =
+          document.createElement("a");
+        a.href = url;
+        a.download =
+          generateFileName("mp4");
+        a.click();
 
-          toast.success("MP4 Downloaded Successfully", {
-            id: toastId,
-          });
-        } catch (error) {
-          toast.error("MP4 Conversion Failed", {
-            id: toastId,
-          });
-        }
-      },
-    }));
+        toast.success(
+          "MP4 Downloaded Successfully",
+          { id: toastId }
+        );
+      } catch {
+        toast.error(
+          "MP4 Conversion Failed",
+          { id: toastId }
+        );
+      }
+    },
+  }));
+
+    // useImperativeHandle(ref, () => ({
+    //   startRecording() {
+    //     const toastId = toast.loading("Recording animation");
+
+    //     recordAnimation(true)
+    //       .then(() => {
+    //         toast.success("WebM Downloaded", {
+    //           id: toastId,
+    //         });
+    //       })
+    //       .catch(() => {
+    //         toast.error("Recording Failed", {
+    //           id: toastId,
+    //         });
+    //       });
+    //   },
+
+    //   async downloadMp4() {
+    //     const toastId = toast.loading("Recording animation");
+
+    //     try {
+    //       const webmBlob = await recordAnimation(false);
+
+    //       toast.loading("Preparing video engine...", { id: toastId });
+
+    //       const ffmpeg = ffmpegRef.current;
+
+    //       if (!ffmpeg.loaded) {
+    //         await ffmpeg.load();
+    //       }
+
+    //       toast.loading("Converting to MP4...", { id: toastId });
+
+    //       await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
+
+    //       await ffmpeg.exec([
+    //         "-i",
+    //         "input.webm",
+    //         "-c:v",
+    //         "libx264",
+    //         "-preset",
+    //         "ultrafast",
+    //         "output.mp4",
+    //       ]);
+
+    //       const data = await ffmpeg.readFile("output.mp4");
+
+    //       if (typeof data === "string") throw new Error("Unexpected string");
+
+    //       const buffer = new Uint8Array(data).slice().buffer;
+
+    //       const mp4Blob = new Blob([buffer], {
+    //         type: "video/mp4",
+    //       });
+
+    //       const url = URL.createObjectURL(mp4Blob);
+    //       const a = document.createElement("a");
+    //       a.href = url;
+    //       a.download = generateFileName("mp4");
+    //       a.click();
+
+    //       toast.success("MP4 Downloaded Successfully", {
+    //         id: toastId,
+    //       });
+    //     } catch (error) {
+    //       toast.error("MP4 Conversion Failed", {
+    //         id: toastId,
+    //       });
+    //     }
+    //   },
+    // }));
 
     useEffect(() => {
       recordAnimation(false);
