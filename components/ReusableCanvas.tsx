@@ -530,7 +530,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
           a.download = generateFileName("mp4");
           a.click();
 
-          toast.success("MP4 Downloaded Successfully 🎉", { id: toastId });
+          toast.success("MP4 Downloaded Successfully", { id: toastId });
         } catch {
           toast.error("MP4 Conversion Failed", { id: toastId });
         }

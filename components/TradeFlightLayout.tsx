@@ -125,7 +125,7 @@ export default function TradeFlightLayout() {
     setPresets(updated);
     localStorage.setItem("tradeflight-presets", JSON.stringify(updated));
 
-    toast.success("Preset saved successfully 🎉");
+    toast.success("Preset saved successfully");
 
     setActivePresetId(newPreset.id);
     setNameError(null);
@@ -170,7 +170,7 @@ export default function TradeFlightLayout() {
     setPresets(updated);
     localStorage.setItem("tradeflight-presets", JSON.stringify(updated));
 
-    toast.success("Preset updated successfully ✅");
+    toast.success("Preset updated successfully");
 
     setNameError(null);
     setIsSaveDialogOpen(false);
@@ -186,7 +186,7 @@ export default function TradeFlightLayout() {
     setActivePresetId(preset.id);
     setPresetName(preset.name);
 
-    toast.success("Preset loaded 🚀");
+    toast.success("Preset loaded");
   };
 
   const deletePreset = (id: string) => {
