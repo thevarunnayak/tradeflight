@@ -343,7 +343,7 @@ export default function TradeFlightLayout() {
 
             return (
               <div key={index} className="space-y-4">
-                <div className="grid gap-4 items-center grid-cols-1 md:grid-cols-[100px_1fr_1fr_120px]">
+                <div className="grid gap-4 items-center grid-cols-1 md:grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)_120px]">
                   <div className="flex items-center gap-4 justify-start">
                     <div className="flex flex-col gap-2">
                       <button
@@ -390,12 +390,13 @@ export default function TradeFlightLayout() {
                     type="time"
                     value={point.time}
                     onChange={(e) => updatePoint(index, "time", e.target.value)}
-                    className={
+                    className={`min-w-0 w-full appearance-none ${
                       isInvalid
                         ? "border-red-500 focus-visible:ring-red-500"
                         : ""
-                    }
+                    }`}
                   />
+
 
                   {index >= 2 && (
                     <Button
