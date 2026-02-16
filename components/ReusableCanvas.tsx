@@ -17,6 +17,7 @@ interface ReusableCanvasProps {
   duration: number;
   title?: string;
   description?: string;
+  audioFile?: File | null;
 }
 
 export interface ReusableCanvasHandle {
@@ -39,7 +40,7 @@ const formatAMPM = (time: string) => {
 };
 
 const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
-  ({ points, aspectRatio, duration, title, description }, ref) => {
+  ({ points, aspectRatio, duration, title, description, audioFile }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ffmpegRef = useRef(new FFmpeg());
 
@@ -65,7 +66,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         const gapBelowHeader = 120;
 
         // Bigger bottom safety so labels never cut
-        const bottomPadding = 300;
+        const bottomPadding = 350;
 
         // Bigger side spacing
         const sidePadding = 240;
@@ -166,11 +167,10 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             lines: string[],
             bg: string,
           ) {
-            ctx.font = "28px Inter";
+            ctx.font = "500 18px Inter, sans-serif";
             ctx.textAlign = "center";
-
-            const padding = 20;
-            const lineHeight = 36;
+            const padding = 14;
+            const lineHeight = 26;
 
             const boxWidth =
               Math.max(...lines.map((l) => ctx.measureText(l).width)) +
@@ -283,19 +283,29 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             // LABELS BELOW POINT (SMART COLLISION SAFE)
             // -------------------------
 
+            // -------------------------
+            // LABELS (REFINED COLLISION SAFE)
+            // -------------------------
+
+            // -------------------------
+            // SIMPLE & CORRECT LABEL LOGIC
+            // -------------------------
+
             const placedLabels: {
-              x: number;
-              y: number;
-              width: number;
-              height: number;
+              left: number;
+              right: number;
+              top: number;
+              bottom: number;
             }[] = [];
 
-            calculatedPoints.forEach((p, index) => {
-              ctx.font = "28px Inter";
-              ctx.textAlign = "center";
+            const baseOffset = 40;
+            const spacing = 12;
 
-              const padding = 20;
-              const lineHeight = 36;
+            calculatedPoints.forEach((p, index) => {
+              ctx.font = "500 18px Inter, sans-serif";
+              ctx.textAlign = "center";
+              const padding = 14;
+              const lineHeight = 26;
 
               const lines =
                 index === 0
@@ -310,35 +320,37 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
               const boxHeight = lines.length * lineHeight + padding * 2;
 
-              let labelY = p.y + 40;
+              let top = p.y + baseOffset;
 
               let box = {
-                x: p.x - boxWidth / 2,
-                y: labelY,
-                width: boxWidth,
-                height: boxHeight,
+                left: p.x - boxWidth / 2,
+                right: p.x + boxWidth / 2,
+                top,
+                bottom: top + boxHeight,
               };
 
-              const isOverlapping = (a: typeof box, b: typeof box) => {
+              const overlaps = (a: typeof box, b: typeof box) => {
                 return !(
-                  a.x + a.width < b.x ||
-                  a.x > b.x + b.width ||
-                  a.y + a.height < b.y ||
-                  a.y > b.y + b.height
+                  a.right <= b.left ||
+                  a.left >= b.right ||
+                  a.bottom <= b.top ||
+                  a.top >= b.bottom
                 );
               };
 
-              let collision = true;
+              let moved = true;
 
-              while (collision) {
-                collision = false;
+              while (moved) {
+                moved = false;
 
                 for (const placed of placedLabels) {
-                  if (isOverlapping(box, placed)) {
-                    labelY += boxHeight + 20;
-                    box.y = labelY;
-                    collision = true;
-                    break;
+                  if (overlaps(box, placed)) {
+                    top = placed.bottom + spacing;
+
+                    box.top = top;
+                    box.bottom = top + boxHeight;
+
+                    moved = true;
                   }
                 }
               }
@@ -352,7 +364,14 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
                     ? "#fee2e2"
                     : "#f3f4f6";
 
-              drawLabelBox(p.x, labelY, lines, bg);
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p.x, box.top);
+              ctx.strokeStyle = "#e5e7eb";
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              drawLabelBox(p.x, box.top, lines, bg);
             });
 
             // -------------------------
@@ -400,7 +419,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             if (progress < 1) {
               requestAnimationFrame(animate);
             } else {
-              recorder.stop();
+              setTimeout(() => recorder.stop(), 500);
             }
           }
 
@@ -458,25 +477,43 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         try {
           const webmBlob = await recordAnimation(false);
 
-          toast.loading("Preparing engine...", { id: toastId });
-
           const ffmpeg = ffmpegRef.current;
-
           if (!ffmpeg.loaded) await ffmpeg.load();
 
-          toast.loading("Converting to MP4...", { id: toastId });
+          toast.loading("Preparing video...", { id: toastId });
 
           await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
 
-          await ffmpeg.exec([
-            "-i",
-            "input.webm",
-            "-c:v",
-            "libx264",
-            "-preset",
-            "ultrafast",
-            "output.mp4",
-          ]);
+          if (audioFile) {
+            await ffmpeg.writeFile("audio", await fetchFile(audioFile));
+
+            toast.loading("Merging audio...", { id: toastId });
+
+            await ffmpeg.exec([
+              "-i",
+              "input.webm",
+              "-i",
+              "audio",
+              "-c:v",
+              "libx264",
+              "-preset",
+              "ultrafast",
+              "-c:a",
+              "aac",
+              "-shortest", // 🔥 trims longer stream automatically
+              "output.mp4",
+            ]);
+          } else {
+            await ffmpeg.exec([
+              "-i",
+              "input.webm",
+              "-c:v",
+              "libx264",
+              "-preset",
+              "ultrafast",
+              "output.mp4",
+            ]);
+          }
 
           const data = await ffmpeg.readFile("output.mp4");
 
@@ -493,84 +530,12 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
           a.download = generateFileName("mp4");
           a.click();
 
-          toast.success("MP4 Downloaded Successfully", { id: toastId });
+          toast.success("MP4 Downloaded Successfully 🎉", { id: toastId });
         } catch {
           toast.error("MP4 Conversion Failed", { id: toastId });
         }
       },
     }));
-
-    // useImperativeHandle(ref, () => ({
-    //   startRecording() {
-    //     const toastId = toast.loading("Recording animation");
-
-    //     recordAnimation(true)
-    //       .then(() => {
-    //         toast.success("WebM Downloaded", {
-    //           id: toastId,
-    //         });
-    //       })
-    //       .catch(() => {
-    //         toast.error("Recording Failed", {
-    //           id: toastId,
-    //         });
-    //       });
-    //   },
-
-    //   async downloadMp4() {
-    //     const toastId = toast.loading("Recording animation");
-
-    //     try {
-    //       const webmBlob = await recordAnimation(false);
-
-    //       toast.loading("Preparing video engine...", { id: toastId });
-
-    //       const ffmpeg = ffmpegRef.current;
-
-    //       if (!ffmpeg.loaded) {
-    //         await ffmpeg.load();
-    //       }
-
-    //       toast.loading("Converting to MP4...", { id: toastId });
-
-    //       await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
-
-    //       await ffmpeg.exec([
-    //         "-i",
-    //         "input.webm",
-    //         "-c:v",
-    //         "libx264",
-    //         "-preset",
-    //         "ultrafast",
-    //         "output.mp4",
-    //       ]);
-
-    //       const data = await ffmpeg.readFile("output.mp4");
-
-    //       if (typeof data === "string") throw new Error("Unexpected string");
-
-    //       const buffer = new Uint8Array(data).slice().buffer;
-
-    //       const mp4Blob = new Blob([buffer], {
-    //         type: "video/mp4",
-    //       });
-
-    //       const url = URL.createObjectURL(mp4Blob);
-    //       const a = document.createElement("a");
-    //       a.href = url;
-    //       a.download = generateFileName("mp4");
-    //       a.click();
-
-    //       toast.success("MP4 Downloaded Successfully", {
-    //         id: toastId,
-    //       });
-    //     } catch (error) {
-    //       toast.error("MP4 Conversion Failed", {
-    //         id: toastId,
-    //       });
-    //     }
-    //   },
-    // }));
 
     useEffect(() => {
       recordAnimation(false);

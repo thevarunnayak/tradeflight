@@ -75,6 +75,7 @@ export default function TradeFlightLayout() {
   const [durationInput, setDurationInput] = useState("5");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [generatedConfig, setGeneratedConfig] = useState<any>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
 
   /* ---------------- PRESETS ---------------- */
 
@@ -510,7 +511,6 @@ export default function TradeFlightLayout() {
         </DialogContent>
       </Dialog>
       {/* LOAD PRESET DIALOG */}
-      {/* LOAD PRESET DIALOG */}
       <Dialog open={isPresetOpen} onOpenChange={setIsPresetOpen}>
         <DialogContent>
           <DialogHeader>
@@ -532,7 +532,38 @@ export default function TradeFlightLayout() {
       <Card className="p-6 md:p-8 bg-white border border-zinc-200 shadow-sm flex flex-col items-center">
         {generatedConfig ? (
           <>
-            <ReusableCanvas ref={canvasRef} {...generatedConfig} />
+            <ReusableCanvas
+              ref={canvasRef}
+              {...generatedConfig}
+              audioFile={audioFile}
+            />
+            <div className="mt-6 w-full max-w-md space-y-3">
+              <Label>Add Background Audio (optional)</Label>
+
+              <Input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setAudioFile(e.target.files[0]);
+                    toast.success("Audio added");
+                  }
+                }}
+              />
+
+              {audioFile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAudioFile(null);
+                    toast("Audio removed");
+                  }}
+                >
+                  Remove Audio
+                </Button>
+              )}
+            </div>
 
             <div className="flex flex-col gap-4 mt-6 w-full max-w-md md:flex-row">
               <Button
