@@ -24,6 +24,18 @@ import {
 } from "@/components/ui/dialog";
 import ReusableCanvas, { ReusableCanvasHandle } from "./ReusableCanvas";
 import LoadPresetLayout from "./LoadPresetLayout";
+import Image from "next/image";
+
+type WatermarkConfig = {
+  enabled: boolean;
+  type: "image" | "text";
+  imageUrl?: string;
+  text?: string;
+  position: "bottom-left" | "bottom-right";
+  sizeRatio: number; // relative to canvas width (0.05 - 0.2)
+  opacity: number; // 0 - 1
+  margin: number; // px
+};
 
 type Point = {
   value: number;
@@ -93,6 +105,18 @@ export default function TradeFlightLayout() {
     if (stored) setPresets(JSON.parse(stored));
   }, []);
 
+  /* ---------------- WATERMARK STATE ---------------- */
+  const [watermark, setWatermark] = useState<WatermarkConfig>({
+    enabled: false,
+    type: "image",
+    imageUrl: "",
+    text: "",
+    position: "bottom-right",
+    sizeRatio: 0.12,
+    opacity: 0.8,
+    margin: 60,
+  });
+
   /* ---------------- SAVE LOGIC ---------------- */
 
   const nameExists = (name: string) =>
@@ -118,6 +142,7 @@ export default function TradeFlightLayout() {
         points,
         durationInput,
         aspectRatio,
+        watermark,
       },
     };
 
@@ -162,6 +187,7 @@ export default function TradeFlightLayout() {
               points,
               durationInput,
               aspectRatio,
+              watermark,
             },
           }
         : p,
@@ -182,6 +208,7 @@ export default function TradeFlightLayout() {
     setPoints(preset.data.points);
     setDurationInput(preset.data.durationInput);
     setAspectRatio(preset.data.aspectRatio);
+    setWatermark(preset.data.watermark || watermark);
 
     setActivePresetId(preset.id);
     setPresetName(preset.name);
@@ -299,6 +326,7 @@ export default function TradeFlightLayout() {
       duration: parsedDuration,
       title: title || undefined,
       description: description || undefined,
+      watermark,
     });
   };
 
@@ -397,7 +425,6 @@ export default function TradeFlightLayout() {
                     }`}
                   />
 
-
                   {index >= 2 && (
                     <Button
                       variant="destructive"
@@ -456,6 +483,142 @@ export default function TradeFlightLayout() {
               <SelectItem value="4:5">4:5</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* WATERMARK CONTROLS */}
+        {/* WATERMARK CONTROLS */}
+        <div className="space-y-4">
+          <Label>Watermark</Label>
+
+          {/* Enable Toggle */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={watermark.enabled}
+              onChange={(e) =>
+                setWatermark({ ...watermark, enabled: e.target.checked })
+              }
+            />
+            <span className="text-sm">Enable Watermark</span>
+          </div>
+
+          {watermark.enabled && (
+            <>
+              {/* Type Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm">Type</Label>
+                <Select
+                  value={watermark.type}
+                  onValueChange={(value) =>
+                    setWatermark({
+                      ...watermark,
+                      type: value as "image" | "text",
+                      imageUrl: value === "image" ? watermark.imageUrl : "",
+                      text: value === "text" ? watermark.text : "",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="image">Image</SelectItem>
+                    <SelectItem value="text">Text</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Position Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm">Position</Label>
+                <Select
+                  value={watermark.position}
+                  onValueChange={(value) =>
+                    setWatermark({
+                      ...watermark,
+                      position: value as "bottom-left" | "bottom-right",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                    <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* IMAGE Upload */}
+              {watermark.type === "image" && (
+                <div className="space-y-3">
+                  {/* Preview if image exists */}
+                  {watermark.imageUrl && (
+                    <div className="flex items-center gap-4">
+                      <Image
+                        src={watermark.imageUrl}
+                        alt="Watermark Preview"
+                        width={120}
+                        height={40}
+                        unoptimized
+                        className="h-10 w-auto object-contain border rounded px-2 py-1 bg-white"
+                      />
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setWatermark({
+                            ...watermark,
+                            imageUrl: "",
+                          })
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Upload Button */}
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (!e.target.files?.[0]) return;
+
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setWatermark({
+                          ...watermark,
+                          imageUrl: reader.result as string,
+                        });
+                      };
+                      reader.readAsDataURL(e.target.files[0]);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* TEXT Input */}
+              {watermark.type === "text" && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Watermark Text</Label>
+                  <Input
+                    placeholder="e.g. @yourhandle"
+                    maxLength={30}
+                    value={watermark.text || ""}
+                    onChange={(e) =>
+                      setWatermark({
+                        ...watermark,
+                        text: e.target.value.slice(0, 30),
+                      })
+                    }
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Generate + Save */}

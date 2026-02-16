@@ -11,6 +11,17 @@ interface Point {
   time: string;
 }
 
+interface WatermarkConfig {
+  enabled: boolean;
+  type: "image" | "text";
+  imageUrl?: string;
+  text?: string;
+  position: "bottom-left" | "bottom-right";
+  sizeRatio: number;
+  opacity: number;
+  margin: number;
+}
+
 interface ReusableCanvasProps {
   points: Point[];
   aspectRatio: string;
@@ -18,6 +29,7 @@ interface ReusableCanvasProps {
   title?: string;
   description?: string;
   audioFile?: File | null;
+  watermark?: WatermarkConfig;
 }
 
 export interface ReusableCanvasHandle {
@@ -40,9 +52,23 @@ const formatAMPM = (time: string) => {
 };
 
 const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
-  ({ points, aspectRatio, duration, title, description, audioFile }, ref) => {
+  (
+    { points, aspectRatio, duration, title, description, audioFile, watermark },
+    ref,
+  ) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ffmpegRef = useRef(new FFmpeg());
+
+    // Preload watermark image if needed
+    const watermarkImageRef = useRef<HTMLImageElement | null>(null);
+
+    useEffect(() => {
+      if (watermark?.type === "image" && watermark.imageUrl) {
+        const img = new Image();
+        img.src = watermark.imageUrl;
+        watermarkImageRef.current = img;
+      }
+    }, [watermark]);
 
     const recordAnimation = async (downloadWebm: boolean): Promise<Blob> => {
       return new Promise((resolve) => {
@@ -66,7 +92,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         const gapBelowHeader = 120;
 
         // Bigger bottom safety so labels never cut
-        const bottomPadding = 350;
+        const bottomPadding = watermark?.enabled ? 450 : 350;
 
         // Bigger side spacing
         const sidePadding = 240;
@@ -415,6 +441,74 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               planeSize,
             );
             ctx.restore();
+
+            // -------------------------
+            // WATERMARK (TOPMOST FINAL LAYER)
+            // -------------------------
+
+            if (watermark?.enabled) {
+              const margin = watermark.margin;
+
+              ctx.save();
+              ctx.globalAlpha = watermark.opacity;
+
+              // -------------------------
+              // IMAGE WATERMARK
+              // -------------------------
+              if (watermark.type === "image" && watermarkImageRef.current) {
+                const img = watermarkImageRef.current;
+
+                // Max width relative to canvas
+                const maxWidth = width * watermark.sizeRatio;
+
+                // Keep natural aspect ratio
+                const aspect = img.naturalWidth / img.naturalHeight;
+
+                let drawWidth = maxWidth;
+                let drawHeight = maxWidth / aspect;
+
+                // Safety: prevent extremely tall logos
+                const maxHeight = height * 0.2; // never exceed 20% of canvas height
+
+                if (drawHeight > maxHeight) {
+                  drawHeight = maxHeight;
+                  drawWidth = maxHeight * aspect;
+                }
+
+                let x = margin;
+                let y = height - drawHeight - margin;
+
+                if (watermark.position === "bottom-right") {
+                  x = width - drawWidth - margin;
+                }
+
+                ctx.drawImage(img, x, y, drawWidth, drawHeight);
+              }
+
+              // -------------------------
+              // TEXT WATERMARK
+              // -------------------------
+              if (watermark.type === "text" && watermark.text) {
+                const fontSize = width * watermark.sizeRatio * 0.2;
+
+                ctx.fillStyle = "#111";
+                ctx.font = `500 ${fontSize}px Inter, sans-serif`;
+                ctx.textAlign =
+                  watermark.position === "bottom-right" ? "right" : "left";
+                ctx.textBaseline = "bottom";
+
+                const x =
+                  watermark.position === "bottom-right"
+                    ? width - margin
+                    : margin;
+
+                const y = height - margin;
+
+                ctx.fillText(watermark.text, x, y);
+              }
+
+              ctx.restore();
+            }
 
             if (progress < 1) {
               requestAnimationFrame(animate);
