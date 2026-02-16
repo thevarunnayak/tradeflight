@@ -178,9 +178,18 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
             const boxHeight = lines.length * lineHeight + padding * 2;
 
+            // Save current state
+            ctx.save();
+
+            // 80% opacity background
+            ctx.globalAlpha = 0.9;
             ctx.fillStyle = bg;
             ctx.fillRect(x - boxWidth / 2, y, boxWidth, boxHeight);
 
+            // Restore full opacity
+            ctx.restore();
+
+            // Text fully solid
             ctx.fillStyle = "#111";
 
             lines.forEach((line, i) => {
@@ -270,39 +279,80 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             // LABELS BELOW POINT
             // -------------------------
 
-            let lastX = -Infinity;
+            // -------------------------
+            // LABELS BELOW POINT (SMART COLLISION SAFE)
+            // -------------------------
+
+            const placedLabels: {
+              x: number;
+              y: number;
+              width: number;
+              height: number;
+            }[] = [];
 
             calculatedPoints.forEach((p, index) => {
+              ctx.font = "28px Inter";
+              ctx.textAlign = "center";
+
+              const padding = 20;
+              const lineHeight = 36;
+
+              const lines =
+                index === 0
+                  ? ["START", `${p.value} (${p.time})`]
+                  : index === calculatedPoints.length - 1
+                    ? ["FINAL DESTINATION", `${p.value} (${p.time})`]
+                    : [`${p.value} (${p.time})`];
+
+              const boxWidth =
+                Math.max(...lines.map((l) => ctx.measureText(l).width)) +
+                padding * 2;
+
+              const boxHeight = lines.length * lineHeight + padding * 2;
+
               let labelY = p.y + 40;
 
-              if (Math.abs(p.x - lastX) < 140) {
-                labelY += 70;
+              let box = {
+                x: p.x - boxWidth / 2,
+                y: labelY,
+                width: boxWidth,
+                height: boxHeight,
+              };
+
+              const isOverlapping = (a: typeof box, b: typeof box) => {
+                return !(
+                  a.x + a.width < b.x ||
+                  a.x > b.x + b.width ||
+                  a.y + a.height < b.y ||
+                  a.y > b.y + b.height
+                );
+              };
+
+              let collision = true;
+
+              while (collision) {
+                collision = false;
+
+                for (const placed of placedLabels) {
+                  if (isOverlapping(box, placed)) {
+                    labelY += boxHeight + 20;
+                    box.y = labelY;
+                    collision = true;
+                    break;
+                  }
+                }
               }
 
-              lastX = p.x;
+              placedLabels.push(box);
 
-              if (index === 0) {
-                drawLabelBox(
-                  p.x,
-                  labelY,
-                  ["START", `${p.value} (${p.time})`],
-                  "#d1fae5",
-                );
-              } else if (index === calculatedPoints.length - 1) {
-                drawLabelBox(
-                  p.x,
-                  labelY,
-                  ["FINAL DESTINATION", `${p.value} (${p.time})`],
-                  "#fee2e2",
-                );
-              } else {
-                drawLabelBox(
-                  p.x,
-                  labelY,
-                  [`${p.value} (${p.time})`],
-                  "#f3f4f6",
-                );
-              }
+              const bg =
+                index === 0
+                  ? "#d1fae5"
+                  : index === calculatedPoints.length - 1
+                    ? "#fee2e2"
+                    : "#f3f4f6";
+
+              drawLabelBox(p.x, labelY, lines, bg);
             });
 
             // -------------------------
@@ -386,96 +436,69 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
       return `${safeTitle}-${timestamp}.${ext}`;
     };
 
-      useImperativeHandle(ref, () => ({
-    async startRecording() {
-      const toastId = toast.loading(
-        "Recording animation..."
-      );
+    useImperativeHandle(ref, () => ({
+      async startRecording() {
+        const toastId = toast.loading("Recording animation...");
 
-      try {
-        await recordAnimation(true);
-        toast.success("WebM Downloaded", {
-          id: toastId,
-        });
-      } catch {
-        toast.error("Recording Failed", {
-          id: toastId,
-        });
-      }
-    },
+        try {
+          await recordAnimation(true);
+          toast.success("WebM Downloaded", {
+            id: toastId,
+          });
+        } catch {
+          toast.error("Recording Failed", {
+            id: toastId,
+          });
+        }
+      },
 
-    async downloadMp4() {
-      const toastId = toast.loading(
-        "Recording animation..."
-      );
+      async downloadMp4() {
+        const toastId = toast.loading("Recording animation...");
 
-      try {
-        const webmBlob =
-          await recordAnimation(false);
+        try {
+          const webmBlob = await recordAnimation(false);
 
-        toast.loading(
-          "Preparing engine...",
-          { id: toastId }
-        );
+          toast.loading("Preparing engine...", { id: toastId });
 
-        const ffmpeg = ffmpegRef.current;
+          const ffmpeg = ffmpegRef.current;
 
-        if (!ffmpeg.loaded)
-          await ffmpeg.load();
+          if (!ffmpeg.loaded) await ffmpeg.load();
 
-        toast.loading(
-          "Converting to MP4...",
-          { id: toastId }
-        );
+          toast.loading("Converting to MP4...", { id: toastId });
 
-        await ffmpeg.writeFile(
-          "input.webm",
-          await fetchFile(webmBlob)
-        );
+          await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
 
-        await ffmpeg.exec([
-          "-i",
-          "input.webm",
-          "-c:v",
-          "libx264",
-          "-preset",
-          "ultrafast",
-          "output.mp4",
-        ]);
+          await ffmpeg.exec([
+            "-i",
+            "input.webm",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "output.mp4",
+          ]);
 
-        const data =
-          await ffmpeg.readFile("output.mp4");
+          const data = await ffmpeg.readFile("output.mp4");
 
-        if (typeof data === "string")
-          throw new Error();
+          if (typeof data === "string") throw new Error();
 
-        const mp4Blob = new Blob(
-          [new Uint8Array(data)],
-          { type: "video/mp4" }
-        );
+          const mp4Blob = new Blob([new Uint8Array(data)], {
+            type: "video/mp4",
+          });
 
-        const url =
-          URL.createObjectURL(mp4Blob);
+          const url = URL.createObjectURL(mp4Blob);
 
-        const a =
-          document.createElement("a");
-        a.href = url;
-        a.download =
-          generateFileName("mp4");
-        a.click();
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = generateFileName("mp4");
+          a.click();
 
-        toast.success(
-          "MP4 Downloaded Successfully",
-          { id: toastId }
-        );
-      } catch {
-        toast.error(
-          "MP4 Conversion Failed",
-          { id: toastId }
-        );
-      }
-    },
-  }));
+          toast.success("MP4 Downloaded Successfully", { id: toastId });
+        } catch {
+          toast.error("MP4 Conversion Failed", { id: toastId });
+        }
+      },
+    }));
 
     // useImperativeHandle(ref, () => ({
     //   startRecording() {
