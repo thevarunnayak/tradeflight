@@ -16,7 +16,13 @@ interface WatermarkConfig {
   type: "image" | "text";
   imageUrl?: string;
   text?: string;
-  position: "bottom-left" | "bottom-right";
+  position:
+    | "top-left"
+    | "top-center"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right";
   sizeRatio: number;
   opacity: number;
   margin: number;
@@ -94,8 +100,44 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         // -------------------------
         // SAFE PADDING SYSTEM
         // -------------------------
-
         let headerHeight = 120;
+        let watermarkTopOffset = 0;
+        let watermarkBottomOffset = 0;
+
+        // -------------------------
+        // PRECALCULATE WATERMARK SIZE FOR SAFE LAYOUT
+        // -------------------------
+
+        if (watermark?.enabled) {
+          const maxWidth = width * watermark.sizeRatio;
+
+          let wmHeight = 0;
+
+          if (
+            watermark.type === "image" &&
+            watermarkImageRef.current?.naturalWidth
+          ) {
+            const img = watermarkImageRef.current;
+            const aspect = img.naturalWidth / img.naturalHeight;
+            wmHeight = maxWidth / aspect;
+          }
+
+          if (watermark.type === "text" && watermark.text) {
+            const fontSize = width * watermark.sizeRatio * 0.2;
+            ctx.font = `500 ${fontSize}px Inter`;
+            wmHeight = fontSize;
+          }
+
+          if (watermark.position.startsWith("top")) {
+            watermarkTopOffset = wmHeight + watermark.margin * 2;
+          }
+
+          if (watermark.position.startsWith("bottom")) {
+            watermarkBottomOffset = wmHeight + watermark.margin * 2;
+          }
+        }
+
+        headerHeight += watermarkTopOffset;
 
         if (title) headerHeight += 140;
         if (description) headerHeight += 110;
@@ -126,7 +168,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         const rightPadding =
           dynamicSidePadding + planeCompensation + opticalAdjustment;
 
-        const bottomPadding = dynamicBottomPadding;
+        const bottomPadding = dynamicBottomPadding + watermarkBottomOffset;
 
         const chartTop = headerHeight + gapBelowHeader;
         const chartBottom = height - bottomPadding;
@@ -263,10 +305,19 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             ctx.fillRect(0, 0, width, height);
 
             // -------------------------
+            // DRAW WATERMARK FIRST IF TOP
+            // -------------------------
+
+            if (watermark?.enabled && watermark.position.startsWith("top")) {
+              drawWatermark();
+            }
+
+            // -------------------------
             // TITLE + DESCRIPTION
             // -------------------------
 
-            let headerCursor = 120;
+            let headerCursor = watermarkTopOffset ? 60 + watermarkTopOffset : 120;
+
 
             if (title) {
               ctx.fillStyle = "#111";
@@ -491,17 +542,13 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               if (watermark.type === "image" && watermarkImageRef.current) {
                 const img = watermarkImageRef.current;
 
-                // Max width relative to canvas
                 const maxWidth = width * watermark.sizeRatio;
-
-                // Keep natural aspect ratio
                 const aspect = img.naturalWidth / img.naturalHeight;
 
                 let drawWidth = maxWidth;
                 let drawHeight = maxWidth / aspect;
 
-                // Safety: prevent extremely tall logos
-                const maxHeight = height * 0.2; // never exceed 20% of canvas height
+                const maxHeight = height * 0.2;
 
                 if (drawHeight > maxHeight) {
                   drawHeight = maxHeight;
@@ -509,10 +556,18 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
                 }
 
                 let x = margin;
-                let y = height - drawHeight - margin;
+                let y = margin;
 
-                if (watermark.position === "bottom-right") {
+                if (watermark.position.includes("right")) {
                   x = width - drawWidth - margin;
+                }
+
+                if (watermark.position.includes("center")) {
+                  x = width / 2 - drawWidth / 2;
+                }
+
+                if (watermark.position.includes("bottom")) {
+                  y = height - drawHeight - margin;
                 }
 
                 ctx.drawImage(img, x, y, drawWidth, drawHeight);
@@ -521,23 +576,11 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               // -------------------------
               // TEXT WATERMARK
               // -------------------------
-              if (watermark.type === "text" && watermark.text) {
-                const fontSize = width * watermark.sizeRatio * 0.2;
-
-                ctx.fillStyle = "#111";
-                ctx.font = `500 ${fontSize}px Inter, sans-serif`;
-                ctx.textAlign =
-                  watermark.position === "bottom-right" ? "right" : "left";
-                ctx.textBaseline = "bottom";
-
-                const x =
-                  watermark.position === "bottom-right"
-                    ? width - margin
-                    : margin;
-
-                const y = height - margin;
-
-                ctx.fillText(watermark.text, x, y);
+              if (
+                watermark?.enabled &&
+                watermark.position.startsWith("bottom")
+              ) {
+                drawWatermark();
               }
 
               ctx.restore();
@@ -548,6 +591,83 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             } else {
               setTimeout(() => recorder.stop(), 500);
             }
+          }
+
+          function drawWatermark() {
+            if (!watermark?.enabled) return;
+
+            const margin = watermark.margin;
+
+            ctx.save();
+            ctx.globalAlpha = watermark.opacity;
+
+            // -------------------------
+            // IMAGE WATERMARK
+            // -------------------------
+            if (watermark.type === "image" && watermarkImageRef.current) {
+              const img = watermarkImageRef.current;
+
+              const maxWidth = width * watermark.sizeRatio;
+              const aspect = img.naturalWidth / img.naturalHeight;
+
+              let drawWidth = maxWidth;
+              let drawHeight = maxWidth / aspect;
+
+              const maxHeight = height * 0.2;
+
+              if (drawHeight > maxHeight) {
+                drawHeight = maxHeight;
+                drawWidth = maxHeight * aspect;
+              }
+
+              let x = margin;
+              let y = margin;
+
+              if (watermark.position.includes("right")) {
+                x = width - drawWidth - margin;
+              }
+
+              if (watermark.position.includes("center")) {
+                x = width / 2 - drawWidth / 2;
+              }
+
+              if (watermark.position.includes("bottom")) {
+                y = height - drawHeight - margin;
+              }
+
+              ctx.drawImage(img, x, y, drawWidth, drawHeight);
+            }
+
+            // -------------------------
+            // TEXT WATERMARK
+            // -------------------------
+            if (watermark.type === "text" && watermark.text) {
+              const fontSize = width * watermark.sizeRatio * 0.2;
+
+              ctx.fillStyle = "#111";
+              ctx.font = `500 ${fontSize}px Inter, sans-serif`;
+
+              let x = margin;
+              let y = margin + fontSize;
+
+              if (watermark.position.includes("right")) {
+                ctx.textAlign = "right";
+                x = width - margin;
+              } else if (watermark.position.includes("center")) {
+                ctx.textAlign = "center";
+                x = width / 2;
+              } else {
+                ctx.textAlign = "left";
+              }
+
+              if (watermark.position.includes("bottom")) {
+                y = height - margin;
+              }
+
+              ctx.fillText(watermark.text, x, y);
+            }
+
+            ctx.restore();
           }
 
           requestAnimationFrame(animate);

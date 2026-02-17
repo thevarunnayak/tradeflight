@@ -32,7 +32,13 @@ type WatermarkConfig = {
   type: "image" | "text";
   imageUrl?: string;
   text?: string;
-  position: "bottom-left" | "bottom-right";
+  position:
+    | "top-left"
+    | "top-center"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right";
   sizeRatio: number; // relative to canvas width (0.05 - 0.2)
   opacity: number; // 0 - 1
   margin: number; // px
@@ -599,54 +605,147 @@ export default function TradeFlightLayout() {
 
           {watermark.enabled && (
             <>
-              {/* Type Selector */}
-              <div className="space-y-2">
-                <Label className="text-base font-semibold text-zinc-800">
-                  Type
-                </Label>
-                <Select
-                  value={watermark.type}
-                  onValueChange={(value) =>
-                    setWatermark({
-                      ...watermark,
-                      type: value as "image" | "text",
-                      imageUrl: value === "image" ? watermark.imageUrl : "",
-                      text: value === "text" ? watermark.text : "",
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="image">Image</SelectItem>
-                    <SelectItem value="text">Text</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* WATERMARK CONTROLS ROW */}
+              <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end">
+                {/* Type */}
+                <div className="flex flex-col gap-2 md:w-48">
+                  <Label className="text-base font-semibold text-zinc-800">
+                    Type
+                  </Label>
+                  <Select
+                    value={watermark.type}
+                    onValueChange={(value) =>
+                      setWatermark({
+                        ...watermark,
+                        type: value as "image" | "text",
+                        imageUrl: value === "image" ? watermark.imageUrl : "",
+                        text: value === "text" ? watermark.text : "",
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Position Selector */}
-              <div className="space-y-2">
-                <Label className="text-base font-semibold text-zinc-800">
-                  Position
-                </Label>
-                <Select
-                  value={watermark.position}
-                  onValueChange={(value) =>
-                    setWatermark({
-                      ...watermark,
-                      position: value as "bottom-left" | "bottom-right",
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                    <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Position */}
+                <div className="flex flex-col gap-2 md:w-56">
+                  <Label className="text-base font-semibold text-zinc-800">
+                    Position
+                  </Label>
+                  <Select
+                    value={watermark.position}
+                    onValueChange={(value) =>
+                      setWatermark({
+                        ...watermark,
+                        position: value as
+                          | "top-left"
+                          | "top-center"
+                          | "top-right"
+                          | "bottom-left"
+                          | "bottom-center"
+                          | "bottom-right",
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top-left">Top Left</SelectItem>
+                      <SelectItem value="top-center">Top Center</SelectItem>
+                      <SelectItem value="top-right">Top Right</SelectItem>
+                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                      <SelectItem value="bottom-center">
+                        Bottom Center
+                      </SelectItem>
+                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Size */}
+                <div className="flex flex-col gap-3 md:w-64">
+                  <Label className="text-base font-semibold text-zinc-800">
+                    Size
+                  </Label>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Slider
+                        min={0.05}
+                        max={1}
+                        step={0.01}
+                        value={[watermark.sizeRatio]}
+                        onValueChange={(value) =>
+                          setWatermark({ ...watermark, sizeRatio: value[0] })
+                        }
+                      />
+                    </div>
+
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0.05}
+                      max={1}
+                      value={watermark.sizeRatio}
+                      onChange={(e) =>
+                        setWatermark({
+                          ...watermark,
+                          sizeRatio: Math.min(
+                            1,
+                            Math.max(0.05, Number(e.target.value)),
+                          ),
+                        })
+                      }
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+
+                {/* Opacity */}
+                <div className="flex flex-col gap-3 md:w-64">
+                  <Label className="text-base font-semibold text-zinc-800">
+                    Opacity
+                  </Label>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Slider
+                        min={0.1}
+                        max={1}
+                        step={0.05}
+                        value={[watermark.opacity]}
+                        onValueChange={(value) =>
+                          setWatermark({ ...watermark, opacity: value[0] })
+                        }
+                      />
+                    </div>
+
+                    <Input
+                      type="number"
+                      step="0.05"
+                      min={0.1}
+                      max={1}
+                      value={watermark.opacity}
+                      onChange={(e) =>
+                        setWatermark({
+                          ...watermark,
+                          opacity: Math.min(
+                            1,
+                            Math.max(0.1, Number(e.target.value)),
+                          ),
+                        })
+                      }
+                      className="w-20"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* IMAGE Upload */}
