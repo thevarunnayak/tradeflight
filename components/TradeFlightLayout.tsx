@@ -25,6 +25,7 @@ import {
 import ReusableCanvas, { ReusableCanvasHandle } from "./ReusableCanvas";
 import LoadPresetLayout from "./LoadPresetLayout";
 import Image from "next/image";
+import { Slider } from "./ui/slider";
 
 type WatermarkConfig = {
   enabled: boolean;
@@ -117,6 +118,10 @@ export default function TradeFlightLayout() {
     margin: 60,
   });
 
+  /* ---------------- LABEL SETTINGS STATE ---------------- */
+  const [labelFontSize, setLabelFontSize] = useState(18); // default 18px
+  const [labelFontWeight, setLabelFontWeight] = useState("500"); // normal
+
   /* ---------------- SAVE LOGIC ---------------- */
 
   const nameExists = (name: string) =>
@@ -143,6 +148,8 @@ export default function TradeFlightLayout() {
         durationInput,
         aspectRatio,
         watermark,
+        labelFontSize,
+        labelFontWeight,
       },
     };
 
@@ -188,6 +195,8 @@ export default function TradeFlightLayout() {
               durationInput,
               aspectRatio,
               watermark,
+              labelFontSize,
+              labelFontWeight,
             },
           }
         : p,
@@ -212,6 +221,8 @@ export default function TradeFlightLayout() {
 
     setActivePresetId(preset.id);
     setPresetName(preset.name);
+    setLabelFontSize(preset.data.labelFontSize || 18);
+    setLabelFontWeight(preset.data.labelFontWeight || "500");
 
     toast.success("Preset loaded");
   };
@@ -327,6 +338,8 @@ export default function TradeFlightLayout() {
       title: title || undefined,
       description: description || undefined,
       watermark,
+      labelFontSize,
+      labelFontWeight,
     });
   };
 
@@ -348,12 +361,16 @@ export default function TradeFlightLayout() {
         {/* FORM (UNCHANGED FROM YOUR ORIGINAL) */}
 
         <div className="space-y-2">
-          <Label>Title (optional)</Label>
+          <Label className="text-base font-semibold text-zinc-800">
+            Title (optional)
+          </Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         <div className="space-y-2">
-          <Label>Description (optional)</Label>
+          <Label className="text-base font-semibold text-zinc-800">
+            Description (optional)
+          </Label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -362,7 +379,9 @@ export default function TradeFlightLayout() {
 
         {/* Points */}
         <div className="space-y-4">
-          <Label>Points</Label>
+          <Label className="text-base font-semibold text-zinc-800">
+            Points
+          </Label>
           {points.map((point, index) => {
             const isInvalid =
               index > 0 &&
@@ -458,37 +477,113 @@ export default function TradeFlightLayout() {
           </Button>
         </div>
 
-        {/* Duration */}
-        <div className="space-y-2">
-          <Label>Duration (seconds)</Label>
-          <Input
-            type="number"
-            value={durationInput}
-            min={1}
-            onChange={(e) => setDurationInput(e.target.value)}
-          />
+        {/* =============================== */}
+        {/* Animation & Label Controls */}
+        {/* =============================== */}
+
+        <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end">
+          {/* Duration */}
+          <div className="flex flex-col gap-2 md:w-40">
+            <Label className="text-base font-semibold text-zinc-800">
+              Duration (seconds)
+            </Label>
+            <Input
+              type="number"
+              value={durationInput}
+              min={1}
+              onChange={(e) => setDurationInput(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Aspect Ratio */}
+          <div className="flex flex-col gap-2 md:w-40">
+            <Label className="text-base font-semibold text-zinc-800">
+              Aspect Ratio
+            </Label>
+            <Select value={aspectRatio} onValueChange={setAspectRatio}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16:9">16:9</SelectItem>
+                <SelectItem value="1:1">1:1</SelectItem>
+                <SelectItem value="9:16">9:16</SelectItem>
+                <SelectItem value="4:5">4:5</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Font Size */}
+          <div className="flex flex-col gap-3 md:w-64">
+            <Label className="text-base font-semibold text-zinc-800">
+              Label Size
+            </Label>
+
+            <div className="flex items-center gap-3">
+              <div className="w-40">
+                <Slider
+                  min={8}
+                  max={64}
+                  step={1}
+                  value={[labelFontSize]}
+                  onValueChange={(value) => setLabelFontSize(value[0])}
+                />
+              </div>
+
+              <Input
+                type="number"
+                min={8}
+                max={64}
+                value={labelFontSize}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val)) {
+                    const clamped = Math.min(64, Math.max(8, val));
+                    setLabelFontSize(clamped);
+                  }
+                }}
+                className="w-20"
+              />
+            </div>
+          </div>
+
+          {/* Font Weight */}
+          <div className="flex flex-col gap-2 md:w-48">
+            <Label className="text-base font-semibold text-zinc-800">
+              Label Weight
+            </Label>
+
+            <Select value={labelFontWeight} onValueChange={setLabelFontWeight}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="100">
+                  <span className="font-thin">Thin</span>
+                </SelectItem>
+                <SelectItem value="300">
+                  <span className="font-light">Light</span>
+                </SelectItem>
+                <SelectItem value="500">
+                  <span className="font-medium">Normal</span>
+                </SelectItem>
+                <SelectItem value="700">
+                  <span className="font-bold">Bold</span>
+                </SelectItem>
+                <SelectItem value="900">
+                  <span className="font-black">Thick</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Aspect Ratio */}
-        <div className="space-y-2">
-          <Label>Aspect Ratio</Label>
-          <Select value={aspectRatio} onValueChange={setAspectRatio}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="16:9">16:9</SelectItem>
-              <SelectItem value="1:1">1:1</SelectItem>
-              <SelectItem value="9:16">9:16</SelectItem>
-              <SelectItem value="4:5">4:5</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* WATERMARK CONTROLS */}
         {/* WATERMARK CONTROLS */}
         <div className="space-y-4">
-          <Label>Watermark</Label>
+          <Label className="text-base font-semibold text-zinc-800">
+            Watermark
+          </Label>
 
           {/* Enable Toggle */}
           <div className="flex items-center gap-3">
@@ -506,7 +601,9 @@ export default function TradeFlightLayout() {
             <>
               {/* Type Selector */}
               <div className="space-y-2">
-                <Label className="text-sm">Type</Label>
+                <Label className="text-base font-semibold text-zinc-800">
+                  Type
+                </Label>
                 <Select
                   value={watermark.type}
                   onValueChange={(value) =>
@@ -530,7 +627,9 @@ export default function TradeFlightLayout() {
 
               {/* Position Selector */}
               <div className="space-y-2">
-                <Label className="text-sm">Position</Label>
+                <Label className="text-base font-semibold text-zinc-800">
+                  Position
+                </Label>
                 <Select
                   value={watermark.position}
                   onValueChange={(value) =>
@@ -603,7 +702,9 @@ export default function TradeFlightLayout() {
               {/* TEXT Input */}
               {watermark.type === "text" && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Watermark Text</Label>
+                  <Label className="text-base font-semibold text-zinc-800">
+                    Watermark Text
+                  </Label>
                   <Input
                     placeholder="e.g. @yourhandle"
                     maxLength={30}
@@ -702,7 +803,9 @@ export default function TradeFlightLayout() {
               audioFile={audioFile}
             />
             <div className="mt-6 w-full max-w-md space-y-3">
-              <Label>Add Background Audio (optional)</Label>
+              <Label className="text-base font-semibold text-zinc-800">
+                Add Background Audio (optional)
+              </Label>
 
               <Input
                 type="file"

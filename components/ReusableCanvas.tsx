@@ -30,6 +30,8 @@ interface ReusableCanvasProps {
   description?: string;
   audioFile?: File | null;
   watermark?: WatermarkConfig;
+  labelFontSize?: number;
+  labelFontWeight?: string;
 }
 
 export interface ReusableCanvasHandle {
@@ -53,7 +55,17 @@ const formatAMPM = (time: string) => {
 
 const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
   (
-    { points, aspectRatio, duration, title, description, audioFile, watermark },
+    {
+      points,
+      aspectRatio,
+      duration,
+      title,
+      description,
+      audioFile,
+      watermark,
+      labelFontSize = 18,
+      labelFontWeight = "500",
+    },
     ref,
   ) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -88,20 +100,41 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
         if (title) headerHeight += 140;
         if (description) headerHeight += 110;
 
-        // Bigger spacing between header and chart
         const gapBelowHeader = 120;
 
-        // Bigger bottom safety so labels never cut
-        const bottomPadding = watermark?.enabled ? 450 : 350;
+        /*
+  Dynamic padding calculation
+  --------------------------------
+  Base safe zone + scaling based on label size
+*/
 
-        // Bigger side spacing
-        const sidePadding = 240;
+        const labelScaleFactor = labelFontSize / 18; // 18 is baseline
+
+        // Bottom padding scales more aggressively
+        const baseBottom = watermark?.enabled ? 350 : 280;
+        const dynamicBottomPadding = baseBottom + labelFontSize * 6;
+
+        const baseSide = 200;
+        const dynamicSidePadding = baseSide + labelFontSize * 2;
+
+        // Plane compensation (optical balance)
+        const planeSize = 110; // same value used later
+        const planeCompensation = planeSize / 2;
+
+        // Small visual adjustment (tweakable)
+        const opticalAdjustment = 20;
+
+        const leftPadding = dynamicSidePadding;
+        const rightPadding =
+          dynamicSidePadding + planeCompensation + opticalAdjustment;
+
+        const bottomPadding = dynamicBottomPadding;
 
         const chartTop = headerHeight + gapBelowHeader;
         const chartBottom = height - bottomPadding;
 
-        const chartLeft = sidePadding;
-        const chartRight = width - sidePadding;
+        const chartLeft = leftPadding;
+        const chartRight = width - rightPadding;
 
         const graphWidth = chartRight - chartLeft;
         const graphHeight = chartBottom - chartTop;
@@ -193,10 +226,11 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             lines: string[],
             bg: string,
           ) {
-            ctx.font = "500 18px Inter, sans-serif";
+            ctx.font = `${labelFontWeight} ${labelFontSize}px Inter, sans-serif`;
+
             ctx.textAlign = "center";
             const padding = 14;
-            const lineHeight = 26;
+            const lineHeight = labelFontSize * 1.4;
 
             const boxWidth =
               Math.max(...lines.map((l) => ctx.measureText(l).width)) +
@@ -328,10 +362,11 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             const spacing = 12;
 
             calculatedPoints.forEach((p, index) => {
-              ctx.font = "500 18px Inter, sans-serif";
+              ctx.font = `${labelFontWeight} ${labelFontSize}px Inter, sans-serif`;
+
               ctx.textAlign = "center";
               const padding = 14;
-              const lineHeight = 26;
+              const lineHeight = labelFontSize * 1.4;
 
               const lines =
                 index === 0
