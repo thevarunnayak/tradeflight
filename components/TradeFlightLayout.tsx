@@ -119,8 +119,8 @@ export default function TradeFlightLayout() {
   });
 
   /* ---------------- LABEL SETTINGS STATE ---------------- */
-  const [labelFontSize, setLabelFontSize] = useState(18); // default 18px
-  const [labelFontWeight, setLabelFontWeight] = useState("500"); // normal
+  const [labelFontSize, setLabelFontSize] = useState(24); // default 24px
+  const [labelFontWeight, setLabelFontWeight] = useState("700"); // bold
 
   /* ---------------- SAVE LOGIC ---------------- */
 
@@ -221,8 +221,8 @@ export default function TradeFlightLayout() {
 
     setActivePresetId(preset.id);
     setPresetName(preset.name);
-    setLabelFontSize(preset.data.labelFontSize || 18);
-    setLabelFontWeight(preset.data.labelFontWeight || "500");
+    setLabelFontSize(preset.data.labelFontSize || 24);
+    setLabelFontWeight(preset.data.labelFontWeight || "700");
 
     toast.success("Preset loaded");
   };

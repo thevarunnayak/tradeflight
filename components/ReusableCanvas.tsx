@@ -63,8 +63,8 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
       description,
       audioFile,
       watermark,
-      labelFontSize = 18,
-      labelFontWeight = "500",
+      labelFontSize = 24,
+      labelFontWeight = "700",
     },
     ref,
   ) => {
@@ -107,8 +107,6 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
   --------------------------------
   Base safe zone + scaling based on label size
 */
-
-        const labelScaleFactor = labelFontSize / 18; // 18 is baseline
 
         // Bottom padding scales more aggressively
         const baseBottom = watermark?.enabled ? 350 : 280;
