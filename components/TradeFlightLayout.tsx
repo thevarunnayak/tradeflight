@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, HelpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ import ReusableCanvas, { ReusableCanvasHandle } from "./ReusableCanvas";
 import LoadPresetLayout from "./LoadPresetLayout";
 import Image from "next/image";
 import { Slider } from "./ui/slider";
+import { driver } from "driver.js";
+import { useTranslation } from "@/app/i18n/languageProvider";
 
 type WatermarkConfig = {
   enabled: boolean;
@@ -135,12 +137,12 @@ export default function TradeFlightLayout() {
 
   const handleSaveAsNew = () => {
     if (!presetName.trim()) {
-      setNameError("Preset name is required");
+      setNameError(t("error.presetNameRequired"));
       return;
     }
 
     if (nameExists(presetName)) {
-      setNameError("Preset name already exists");
+      setNameError(t("error.presetExists"));
       return;
     }
 
@@ -163,7 +165,7 @@ export default function TradeFlightLayout() {
     setPresets(updated);
     localStorage.setItem("tradeflight-presets", JSON.stringify(updated));
 
-    toast.success("Preset saved successfully");
+    toast.success(t("toast.presetSaved"));
 
     setActivePresetId(newPreset.id);
     setNameError(null);
@@ -174,7 +176,7 @@ export default function TradeFlightLayout() {
     if (!activePresetId) return;
 
     if (!presetName.trim()) {
-      setNameError("Preset name is required");
+      setNameError(t("error.presetNameRequired"));
       return;
     }
 
@@ -185,7 +187,7 @@ export default function TradeFlightLayout() {
     );
 
     if (duplicate) {
-      setNameError("Another preset already has this name");
+      setNameError(t("error.presetDuplicate"));
       return;
     }
 
@@ -211,7 +213,7 @@ export default function TradeFlightLayout() {
     setPresets(updated);
     localStorage.setItem("tradeflight-presets", JSON.stringify(updated));
 
-    toast.success("Preset updated successfully");
+    toast.success(t("toast.presetUpdated"));
 
     setNameError(null);
     setIsSaveDialogOpen(false);
@@ -230,7 +232,7 @@ export default function TradeFlightLayout() {
     setLabelFontSize(preset.data.labelFontSize || 24);
     setLabelFontWeight(preset.data.labelFontWeight || "700");
 
-    toast.success("Preset loaded");
+    toast.success(t("toast.presetLoaded"));
   };
 
   const deletePreset = (id: string) => {
@@ -243,7 +245,7 @@ export default function TradeFlightLayout() {
       setPresetName("");
     }
 
-    toast.success("Preset deleted");
+    toast.success(t("toast.presetDeleted"));
   };
 
   /* ---------------- VALIDATION ---------------- */
@@ -251,7 +253,7 @@ export default function TradeFlightLayout() {
   const validateTimes = (updatedPoints: Point[]) => {
     for (let i = 0; i < updatedPoints.length; i++) {
       if (!updatedPoints[i].time) {
-        setTimeError("All points must have a time.");
+        setTimeError(t("error.timeMissing"));
         return false;
       }
 
@@ -260,9 +262,7 @@ export default function TradeFlightLayout() {
         const current = timeToMinutes(updatedPoints[i].time);
 
         if (current <= prev) {
-          setTimeError(
-            "Each time must be strictly later than the previous one.",
-          );
+          setTimeError(t("error.timeOrder"));
           return false;
         }
       }
@@ -333,7 +333,7 @@ export default function TradeFlightLayout() {
 
     const parsedDuration = Number(durationInput);
     if (!parsedDuration || parsedDuration <= 0) {
-      toast.error("Duration must be greater than 0");
+      toast.error(t("toast.durationInvalid"));
       return;
     }
 
@@ -348,34 +348,151 @@ export default function TradeFlightLayout() {
       labelFontWeight,
     });
   };
+  //translations
+  const { lang, setLang, t } = useTranslation();
+
+  // helper driver js
+
+  const startTour = (t: any) => {
+    lockScroll(); // 🔒 block scroll immediately
+
+    const driverObj = driver({
+      showProgress: true,
+      allowClose: true,
+      nextBtnText: t("tour.next"),
+      prevBtnText: t("tour.prev"),
+      doneBtnText: t("tour.done"),
+
+      onDestroyed: () => {
+        unlockScroll(); // 🔓 always restore scroll
+      },
+
+      steps: [
+        {
+          element: ".tour-title",
+          popover: {
+            title: t("tour.title"),
+            description: t("tour.titleDesc"),
+          },
+        },
+        {
+          element: ".tour-description",
+          popover: {
+            title: t("tour.description"),
+            description: t("tour.descriptionDesc"),
+          },
+        },
+        {
+          element: ".tour-points",
+          popover: {
+            title: t("tour.points"),
+            description: t("tour.pointsDesc"),
+          },
+        },
+        {
+          element: ".tour-animation",
+          popover: {
+            title: t("tour.animation"),
+            description: t("tour.animationDesc"),
+          },
+        },
+        {
+          element: ".tour-watermark",
+          popover: {
+            title: t("tour.watermark"),
+            description: t("tour.watermarkDesc"),
+          },
+        },
+        {
+          element: ".tour-generate",
+          popover: {
+            title: t("tour.generate"),
+            description: t("tour.generateDesc"),
+          },
+        },
+        {
+          element: ".tour-download",
+          popover: {
+            title: t("tour.download"),
+            description: t("tour.downloadDesc"),
+          },
+        },
+      ],
+    });
+
+    driverObj.drive();
+  };
+  const lockScroll = () => {
+    document.body.style.overflow = "hidden";
+  };
+
+  const unlockScroll = () => {
+    document.body.style.overflow = "";
+  };
+  useEffect(() => {
+    const seen = localStorage.getItem("tradeflight-tour-seen");
+    if (!seen) {
+      setTimeout(() => {
+        startTour(t);
+        localStorage.setItem("tradeflight-tour-seen", "true");
+      }, 800);
+    }
+  }, [t]);
 
   return (
-    <div className="space-y-8 p-6 md:p-8">
+    <div className="space-y-8 p-5 md:p-8">
       <Card className="p-6 space-y-6 bg-white border border-zinc-200 shadow-sm">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Trade Flight Controls</h2>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          {/* Title */}
+          <h2 className="text-xl font-semibold whitespace-nowrap">
+            {t("controls.title")}
+          </h2>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsPresetOpen(true)}
-          >
-            Load Preset
-          </Button>
+          {/* Right Controls */}
+          <div className="flex flex-wrap items-center gap-2 md:justify-end md:gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={() => setIsPresetOpen(true)}
+            >
+              {t("controls.loadPreset")}
+            </Button>
+
+            <Select value={lang} onValueChange={(v) => setLang(v as any)}>
+              <SelectTrigger className="h-9 w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hi">हिन्दी</SelectItem>
+                <SelectItem value="kn">ಕನ್ನಡ</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => startTour(t)}
+            >
+              <HelpCircle className="w-4 h-4 text-zinc-600" />
+            </Button>
+          </div>
         </div>
 
         {/* FORM (UNCHANGED FROM YOUR ORIGINAL) */}
 
-        <div className="space-y-2">
+        <div className="space-y-2 tour-title">
           <Label className="text-base font-semibold text-zinc-800">
-            Title (optional)
+            {t("form.title")}
           </Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 tour-description">
           <Label className="text-base font-semibold text-zinc-800">
-            Description (optional)
+            {t("form.description")}
           </Label>
           <Textarea
             value={description}
@@ -384,9 +501,9 @@ export default function TradeFlightLayout() {
         </div>
 
         {/* Points */}
-        <div className="space-y-4">
+        <div className="space-y-4 tour-points">
           <Label className="text-base font-semibold text-zinc-800">
-            Points
+            {t("form.points")}
           </Label>
           {points.map((point, index) => {
             const isInvalid =
@@ -396,7 +513,7 @@ export default function TradeFlightLayout() {
 
             return (
               <div key={index} className="space-y-4">
-                <div className="grid gap-4 items-center grid-cols-1 md:grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)_120px]">
+                <div className="grid gap-4 items-center grid-cols-1 md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_120px]">
                   <div className="flex items-center gap-4 justify-start">
                     <div className="flex flex-col gap-2">
                       <button
@@ -419,7 +536,7 @@ export default function TradeFlightLayout() {
                     </div>
 
                     <span className="text-sm text-zinc-500">
-                      Point {index + 1}
+                      {t("form.point")} {index + 1}
                     </span>
                   </div>
 
@@ -458,7 +575,7 @@ export default function TradeFlightLayout() {
                       className="flex items-center gap-2 w-full md:w-auto"
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      {t("form.delete")}
                     </Button>
                   )}
                 </div>
@@ -479,7 +596,7 @@ export default function TradeFlightLayout() {
             disabled={!!timeError}
             className="w-full"
           >
-            + Add Point
+            + {t("form.addPoint")}
           </Button>
         </div>
 
@@ -487,11 +604,11 @@ export default function TradeFlightLayout() {
         {/* Animation & Label Controls */}
         {/* =============================== */}
 
-        <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end">
+        <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end tour-animation">
           {/* Duration */}
           <div className="flex flex-col gap-2 md:w-40">
             <Label className="text-base font-semibold text-zinc-800">
-              Duration (seconds)
+              {t("form.duration")}
             </Label>
             <Input
               type="number"
@@ -505,7 +622,7 @@ export default function TradeFlightLayout() {
           {/* Aspect Ratio */}
           <div className="flex flex-col gap-2 md:w-40">
             <Label className="text-base font-semibold text-zinc-800">
-              Aspect Ratio
+              {t("form.aspectRatio")}
             </Label>
             <Select value={aspectRatio} onValueChange={setAspectRatio}>
               <SelectTrigger>
@@ -523,7 +640,7 @@ export default function TradeFlightLayout() {
           {/* Font Size */}
           <div className="flex flex-col gap-3 md:w-64">
             <Label className="text-base font-semibold text-zinc-800">
-              Label Size
+              {t("form.labelSize")}
             </Label>
 
             <div className="flex items-center gap-3">
@@ -557,7 +674,7 @@ export default function TradeFlightLayout() {
           {/* Font Weight */}
           <div className="flex flex-col gap-2 md:w-48">
             <Label className="text-base font-semibold text-zinc-800">
-              Label Weight
+              {t("form.labelWeight")}
             </Label>
 
             <Select value={labelFontWeight} onValueChange={setLabelFontWeight}>
@@ -566,19 +683,21 @@ export default function TradeFlightLayout() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="100">
-                  <span className="font-thin">Thin</span>
+                  <span className="font-thin">{t("form.labelFontThin")}</span>
                 </SelectItem>
                 <SelectItem value="300">
-                  <span className="font-light">Light</span>
+                  <span className="font-light">{t("form.labelFontLight")}</span>
                 </SelectItem>
                 <SelectItem value="500">
-                  <span className="font-medium">Normal</span>
+                  <span className="font-medium">
+                    {t("form.labelFontNormal")}
+                  </span>
                 </SelectItem>
                 <SelectItem value="700">
-                  <span className="font-bold">Bold</span>
+                  <span className="font-bold">{t("form.labelFontBold")}</span>
                 </SelectItem>
                 <SelectItem value="900">
-                  <span className="font-black">Thick</span>
+                  <span className="font-black">{t("form.labelFontThick")}</span>
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -586,9 +705,9 @@ export default function TradeFlightLayout() {
         </div>
 
         {/* WATERMARK CONTROLS */}
-        <div className="space-y-4">
+        <div className="space-y-4 tour-watermark">
           <Label className="text-base font-semibold text-zinc-800">
-            Watermark
+            {t("watermark.title")}
           </Label>
 
           {/* Enable Toggle */}
@@ -600,7 +719,7 @@ export default function TradeFlightLayout() {
                 setWatermark({ ...watermark, enabled: e.target.checked })
               }
             />
-            <span className="text-sm">Enable Watermark</span>
+            <span className="text-sm">{t("watermark.enable")}</span>
           </div>
 
           {watermark.enabled && (
@@ -610,7 +729,7 @@ export default function TradeFlightLayout() {
                 {/* Type */}
                 <div className="flex flex-col gap-2 md:w-48">
                   <Label className="text-base font-semibold text-zinc-800">
-                    Type
+                    {t("watermark.type")}
                   </Label>
                   <Select
                     value={watermark.type}
@@ -627,8 +746,8 @@ export default function TradeFlightLayout() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="image">Image</SelectItem>
-                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="image">{t("form.image")}</SelectItem>
+                      <SelectItem value="text">{t("form.text")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -636,7 +755,7 @@ export default function TradeFlightLayout() {
                 {/* Position */}
                 <div className="flex flex-col gap-2 md:w-56">
                   <Label className="text-base font-semibold text-zinc-800">
-                    Position
+                    {t("watermark.position")}
                   </Label>
                   <Select
                     value={watermark.position}
@@ -657,14 +776,24 @@ export default function TradeFlightLayout() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="top-left">Top Left</SelectItem>
-                      <SelectItem value="top-center">Top Center</SelectItem>
-                      <SelectItem value="top-right">Top Right</SelectItem>
-                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                      <SelectItem value="bottom-center">
-                        Bottom Center
+                      <SelectItem value="top-left">
+                        {t("form.topLeft")}
                       </SelectItem>
-                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                      <SelectItem value="top-center">
+                        {t("form.topCenter")}
+                      </SelectItem>
+                      <SelectItem value="top-right">
+                        {t("form.topRight")}
+                      </SelectItem>
+                      <SelectItem value="bottom-left">
+                        {t("form.bottomLeft")}
+                      </SelectItem>
+                      <SelectItem value="bottom-center">
+                        {t("form.bottomCenter")}
+                      </SelectItem>
+                      <SelectItem value="bottom-right">
+                        {t("form.bottomRight")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -672,7 +801,7 @@ export default function TradeFlightLayout() {
                 {/* Size */}
                 <div className="flex flex-col gap-3 md:w-64">
                   <Label className="text-base font-semibold text-zinc-800">
-                    Size
+                    {t("watermark.size")}
                   </Label>
 
                   <div className="flex items-center gap-3">
@@ -711,7 +840,7 @@ export default function TradeFlightLayout() {
                 {/* Opacity */}
                 <div className="flex flex-col gap-3 md:w-64">
                   <Label className="text-base font-semibold text-zinc-800">
-                    Opacity
+                    {t("watermark.opacity")}
                   </Label>
 
                   <div className="flex items-center gap-3">
@@ -756,7 +885,7 @@ export default function TradeFlightLayout() {
                     <div className="flex items-center gap-4">
                       <Image
                         src={watermark.imageUrl}
-                        alt="Watermark Preview"
+                        alt={t("watermark.imagePreview")}
                         width={120}
                         height={40}
                         unoptimized
@@ -773,7 +902,7 @@ export default function TradeFlightLayout() {
                           })
                         }
                       >
-                        Remove
+                        {t("form.remove")}
                       </Button>
                     </div>
                   )}
@@ -802,10 +931,10 @@ export default function TradeFlightLayout() {
               {watermark.type === "text" && (
                 <div className="space-y-2">
                   <Label className="text-base font-semibold text-zinc-800">
-                    Watermark Text
+                    {t("form.watermarkText")}
                   </Label>
                   <Input
-                    placeholder="e.g. @yourhandle"
+                    placeholder={t("form.watermarkPlaceholder")}
                     maxLength={30}
                     value={watermark.text || ""}
                     onChange={(e) =>
@@ -824,11 +953,11 @@ export default function TradeFlightLayout() {
         {/* Generate + Save */}
         <div className="flex flex-col gap-3 md:flex-row">
           <Button
-            className="flex-1"
+            className="flex-1 tour-generate"
             onClick={handleGenerate}
             disabled={!!timeError}
           >
-            Generate Animation
+            {t("controls.generate")}
           </Button>
 
           <Button
@@ -836,7 +965,7 @@ export default function TradeFlightLayout() {
             className="flex-1"
             onClick={() => setIsSaveDialogOpen(true)}
           >
-            Save Preset
+            {t("controls.savePreset")}
           </Button>
         </div>
       </Card>
@@ -845,11 +974,11 @@ export default function TradeFlightLayout() {
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Preset</DialogTitle>
+            <DialogTitle>{t("dialog.savePreset")}</DialogTitle>
           </DialogHeader>
 
           <Input
-            placeholder="Preset name"
+            placeholder={t("dialog.presetName")}
             value={presetName}
             onChange={(e) => {
               setPresetName(e.target.value);
@@ -863,13 +992,15 @@ export default function TradeFlightLayout() {
           <DialogFooter className="flex gap-2">
             {activePresetId ? (
               <>
-                <Button onClick={handleUpdatePreset}>Update</Button>
+                <Button onClick={handleUpdatePreset}>
+                  {t("dialog.update")}
+                </Button>
                 <Button variant="secondary" onClick={handleSaveAsNew}>
-                  Save As New
+                  {t("dialog.saveAsNew")}
                 </Button>
               </>
             ) : (
-              <Button onClick={handleSaveAsNew}>Save</Button>
+              <Button onClick={handleSaveAsNew}>{t("dialog.save")}</Button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -878,7 +1009,7 @@ export default function TradeFlightLayout() {
       <Dialog open={isPresetOpen} onOpenChange={setIsPresetOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Saved Presets</DialogTitle>
+            <DialogTitle>{t("preset.saved")}</DialogTitle>
           </DialogHeader>
 
           <LoadPresetLayout
@@ -888,6 +1019,7 @@ export default function TradeFlightLayout() {
               setIsPresetOpen(false);
             }}
             onDelete={deletePreset}
+            t={t}
           />
         </DialogContent>
       </Dialog>
@@ -900,10 +1032,11 @@ export default function TradeFlightLayout() {
               ref={canvasRef}
               {...generatedConfig}
               audioFile={audioFile}
+              t={t}
             />
             <div className="mt-6 w-full max-w-md space-y-3">
               <Label className="text-base font-semibold text-zinc-800">
-                Add Background Audio (optional)
+                {t("form.addAudio")}
               </Label>
 
               <Input
@@ -912,7 +1045,7 @@ export default function TradeFlightLayout() {
                 onChange={(e) => {
                   if (e.target.files?.[0]) {
                     setAudioFile(e.target.files[0]);
-                    toast.success("Audio added");
+                    toast.success(t("toast.audioAdded"));
                   }
                 }}
               />
@@ -923,15 +1056,15 @@ export default function TradeFlightLayout() {
                   size="sm"
                   onClick={() => {
                     setAudioFile(null);
-                    toast("Audio removed");
+                    toast(t("toast.audioRemoved"));
                   }}
                 >
-                  Remove Audio
+                  {t("form.removeAudio")}
                 </Button>
               )}
             </div>
 
-            <div className="flex flex-col gap-4 mt-6 w-full max-w-md md:flex-row">
+            <div className="flex flex-col gap-4 mt-6 w-full max-w-md md:flex-row tour-download">
               <Button
                 className="flex-1"
                 disabled={isRecording || isConverting}
@@ -945,7 +1078,7 @@ export default function TradeFlightLayout() {
                   }
                 }}
               >
-                {isRecording ? "Recording..." : "Download WebM"}
+                {isRecording ? t("download.recording") : t("download.webm")}
               </Button>
 
               <Button
@@ -962,14 +1095,12 @@ export default function TradeFlightLayout() {
                   }
                 }}
               >
-                {isConverting ? "Converting..." : "Download MP4"}
+                {isConverting ? t("download.converting") : t("download.mp4")}
               </Button>
             </div>
           </>
         ) : (
-          <div className="text-zinc-400">
-            Click Generate to preview animation
-          </div>
+          <div className="text-zinc-400">{t("preview.clickGenerate")}</div>
         )}
       </Card>
     </div>

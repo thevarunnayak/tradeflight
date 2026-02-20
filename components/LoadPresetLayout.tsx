@@ -15,9 +15,15 @@ interface Props {
   presets: Preset[];
   onLoad: (preset: Preset) => void;
   onDelete: (id: string) => void;
+  t?: (key: string) => string;
 }
 
-export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
+export default function LoadPresetLayout({
+  presets,
+  onLoad,
+  onDelete,
+  t = (key: string) => key,
+}: Props) {
   const [search, setSearch] = useState("");
 
   const filteredPresets = useMemo(() => {
@@ -40,7 +46,7 @@ export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <Input
-          placeholder="Search presets..."
+          placeholder={t("preset.search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -51,7 +57,7 @@ export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
       <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
         {filteredPresets.length === 0 ? (
           <div className="py-10 text-center text-sm text-zinc-400">
-            No matching presets found.
+            {t("preset.noMatching")}
           </div>
         ) : (
           filteredPresets.map((preset) => (
@@ -86,7 +92,7 @@ export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
               <div className="flex flex-wrap gap-4 text-xs text-zinc-500 mt-3">
                 <div className="flex items-center gap-1">
                   <List className="w-3 h-3" />
-                  {preset.data.points.length} points
+                  {preset.data.points.length} {t("preset.points")}
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -119,7 +125,7 @@ export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
                   onClick={() => onLoad(preset)}
                 >
                   <PlayCircle className="w-4 h-4" />
-                  Load
+                  {t("preset.load")}
                 </Button>
 
                 <Button
@@ -129,7 +135,7 @@ export default function LoadPresetLayout({ presets, onLoad, onDelete }: Props) {
                   onClick={() => onDelete(preset.id)}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t("preset.delete")}
                 </Button>
               </div>
             </div>

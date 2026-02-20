@@ -38,6 +38,7 @@ interface ReusableCanvasProps {
   watermark?: WatermarkConfig;
   labelFontSize?: number;
   labelFontWeight?: string;
+  t?: (key: string) => string;
 }
 
 export interface ReusableCanvasHandle {
@@ -71,6 +72,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
       watermark,
       labelFontSize = 24,
       labelFontWeight = "700",
+      t = (key: string) => key,
     },
     ref,
   ) => {
@@ -316,8 +318,9 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             // TITLE + DESCRIPTION
             // -------------------------
 
-            let headerCursor = watermarkTopOffset ? 60 + watermarkTopOffset : 120;
-
+            let headerCursor = watermarkTopOffset
+              ? 60 + watermarkTopOffset
+              : 120;
 
             if (title) {
               ctx.fillStyle = "#111";
@@ -419,9 +422,9 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
               const lines =
                 index === 0
-                  ? ["START", `${p.value} (${p.time})`]
+                  ? [t("label.start"), `${p.value} (${p.time})`]
                   : index === calculatedPoints.length - 1
-                    ? ["FINAL DESTINATION", `${p.value} (${p.time})`]
+                    ? [t("label.finalDestination"), `${p.value} (${p.time})`]
                     : [`${p.value} (${p.time})`];
 
               const boxWidth =
@@ -704,22 +707,22 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
     useImperativeHandle(ref, () => ({
       async startRecording() {
-        const toastId = toast.loading("Recording animation...");
+        const toastId = toast.loading(t("toast.recording"));
 
         try {
           await recordAnimation(true);
-          toast.success("WebM Downloaded", {
+          toast.success(t("toast.webmDownloaded"), {
             id: toastId,
           });
         } catch {
-          toast.error("Recording Failed", {
+          toast.error(t("toast.recordingFailed"), {
             id: toastId,
           });
         }
       },
 
       async downloadMp4() {
-        const toastId = toast.loading("Recording animation...");
+        const toastId = toast.loading(t("toast.recording"));
 
         try {
           const webmBlob = await recordAnimation(false);
@@ -727,14 +730,14 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
           const ffmpeg = ffmpegRef.current;
           if (!ffmpeg.loaded) await ffmpeg.load();
 
-          toast.loading("Preparing video...", { id: toastId });
+          toast.loading(t("toast.preparingVideo"), { id: toastId });
 
           await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
 
           if (audioFile) {
             await ffmpeg.writeFile("audio", await fetchFile(audioFile));
 
-            toast.loading("Merging audio...", { id: toastId });
+            toast.loading(t("toast.mergingAudio"), { id: toastId });
 
             await ffmpeg.exec([
               "-i",
@@ -747,7 +750,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               "ultrafast",
               "-c:a",
               "aac",
-              "-shortest", // 🔥 trims longer stream automatically
+              "-shortest",
               "output.mp4",
             ]);
           } else {
@@ -777,16 +780,16 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
           a.download = generateFileName("mp4");
           a.click();
 
-          toast.success("MP4 Downloaded Successfully", { id: toastId });
+          toast.success(t("toast.mp4Downloaded"), { id: toastId });
         } catch {
-          toast.error("MP4 Conversion Failed", { id: toastId });
+          toast.error(t("toast.mp4Failed"), { id: toastId });
         }
       },
     }));
 
     useEffect(() => {
       recordAnimation(false);
-    }, [points, aspectRatio, duration]);
+    }, [points, aspectRatio, duration, t]);
 
     return (
       <canvas
