@@ -5,7 +5,6 @@ import { ArrowDown, ArrowUp, HelpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -108,6 +107,8 @@ export default function TradeFlightLayout() {
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [generatedConfig, setGeneratedConfig] = useState<any>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [slidingEnabled, setSlidingEnabled] = useState(false);
+  const [minVisiblePoints, setMinVisiblePoints] = useState(5);
 
   /* ---------------- PRESETS ---------------- */
 
@@ -357,6 +358,8 @@ export default function TradeFlightLayout() {
       watermark,
       labelFontSize,
       labelFontWeight,
+      slidingEnabled,
+      minVisiblePoints,
     });
   };
   //translations
@@ -379,6 +382,28 @@ export default function TradeFlightLayout() {
       },
 
       steps: [
+        {
+          element: ".tour-load-preset",
+          popover: {
+            title: t("tour.loadPreset"),
+            description: t("tour.loadPresetDesc"),
+          },
+        },
+        {
+          element: ".tour-language",
+          popover: {
+            title: t("tour.language"),
+            description: t("tour.languageDesc"),
+          },
+        },
+
+        {
+          element: ".tour-import",
+          popover: {
+            title: t("tour.import"),
+            description: t("tour.importDesc"),
+          },
+        },
         {
           element: ".tour-title",
           popover: {
@@ -464,14 +489,14 @@ export default function TradeFlightLayout() {
             <Button
               variant="outline"
               size="sm"
-              className="h-9"
+              className="h-9 tour-load-preset"
               onClick={() => setIsPresetOpen(true)}
             >
               {t("controls.loadPreset")}
             </Button>
 
             <Select value={lang} onValueChange={(v) => setLang(v as any)}>
-              <SelectTrigger className="h-9 w-28">
+              <SelectTrigger className="h-9 w-28 tour-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -492,91 +517,97 @@ export default function TradeFlightLayout() {
           </div>
         </div>
 
-        <div className="w-full flex justify-end">
+        <div className="w-full flex justify-end ">
+          <div className="tour-import">
             <ImportPointsDialog
-    onApply={(newPoints) => {
-      validateTimes(newPoints);
-      setPoints(newPoints);
-    }}
-  />
+              onApply={(newPoints) => {
+                validateTimes(newPoints);
+                setPoints(newPoints);
+              }}
+            />
+          </div>
         </div>
 
         {/* FORM (UNCHANGED FROM YOUR ORIGINAL) */}
         <div className="py-4">
+          <Accordion
+            type="multiple"
+            defaultValue={["info", "points", "settings"]}
+            className="w-full space-y-4 overflow-hidden"
+          >
+            {/* ================= INFO ================= */}
+            <AccordionItem
+              value="info"
+              className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+            >
+              <AccordionTrigger className="text-base font-semibold">
+                {t("form.infoSection")}
+              </AccordionTrigger>
 
-<Accordion
-  type="multiple"
-  defaultValue={["info", "points", "settings"]}
-  className="w-full space-y-4 overflow-hidden"
->
-  {/* ================= INFO ================= */}
-  <AccordionItem
-    value="info"
-    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
-  >
-    <AccordionTrigger className="text-base font-semibold">
-      {t("form.infoSection")}
-    </AccordionTrigger>
+              <AccordionContent className="pt-4 pb-6">
+                <InfoSection
+                  title={title}
+                  setTitle={setTitle}
+                  description={description}
+                  setDescription={setDescription}
+                  t={t}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-    <AccordionContent className="pt-4 pb-6">
-      <InfoSection
-        title={title}
-        setTitle={setTitle}
-        description={description}
-        setDescription={setDescription}
-        t={t}
-      />
-    </AccordionContent>
-  </AccordionItem>
+            {/* ================= POINTS ================= */}
+            <AccordionItem
+              value="points"
+              className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+            >
+              <AccordionTrigger className="text-base font-semibold">
+                {t("form.pointsSection")}
+              </AccordionTrigger>
 
-  {/* ================= POINTS ================= */}
-  <AccordionItem
-    value="points"
-    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
-  >
-    <AccordionTrigger className="text-base font-semibold">
-      {t("form.pointsSection")}
-    </AccordionTrigger>
+              <AccordionContent className="pt-4 pb-6">
+                <PointsSection
+                  points={points}
+                  updatePoint={updatePoint}
+                  moveValue={moveValue}
+                  deletePoint={deletePoint}
+                  addPoint={addPoint}
+                  timeError={timeError}
+                  t={t}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-    <AccordionContent className="pt-4 pb-6">
-      <PointsSection
-        points={points}
-        updatePoint={updatePoint}
-        moveValue={moveValue}
-        deletePoint={deletePoint}
-        addPoint={addPoint}
-        timeError={timeError}
-        t={t}
-      />
-    </AccordionContent>
-  </AccordionItem>
+            {/* ================= SETTINGS ================= */}
+            <AccordionItem
+              value="settings"
+              className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+            >
+              <AccordionTrigger className="text-base font-semibold">
+                {t("form.settingsSection")}
+              </AccordionTrigger>
 
-  {/* ================= SETTINGS ================= */}
-  <AccordionItem
-    value="settings"
-    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
-  >
-    <AccordionTrigger className="text-base font-semibold">
-      {t("form.settingsSection")}
-    </AccordionTrigger>
-
-    <AccordionContent className="pt-4 pb-6">
-      <SettingsSection
-        durationInput={durationInput}
-        setDurationInput={setDurationInput}
-        aspectRatio={aspectRatio}
-        setAspectRatio={setAspectRatio}
-        labelFontSize={labelFontSize}
-        setLabelFontSize={setLabelFontSize}
-        labelFontWeight={labelFontWeight}
-        setLabelFontWeight={setLabelFontWeight}
-        watermark={watermark}
-        setWatermark={setWatermark}
-        t={t}
-      />
-    </AccordionContent>
-  </AccordionItem>
-</Accordion>
+              <AccordionContent className="pt-4 pb-6">
+                <SettingsSection
+                  durationInput={durationInput}
+                  setDurationInput={setDurationInput}
+                  aspectRatio={aspectRatio}
+                  setAspectRatio={setAspectRatio}
+                  labelFontSize={labelFontSize}
+                  setLabelFontSize={setLabelFontSize}
+                  labelFontWeight={labelFontWeight}
+                  setLabelFontWeight={setLabelFontWeight}
+                  watermark={watermark}
+                  setWatermark={setWatermark}
+                  slidingEnabled={slidingEnabled}
+                  setSlidingEnabled={setSlidingEnabled}
+                  minVisiblePoints={minVisiblePoints}
+                  setMinVisiblePoints={setMinVisiblePoints}
+                  totalPoints={points.length}
+                  t={t}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
         {/* Generate + Save */}
         <div className="flex flex-col gap-3 md:flex-row">

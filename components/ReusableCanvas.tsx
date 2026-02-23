@@ -28,7 +28,7 @@ interface WatermarkConfig {
   margin: number;
 }
 
-interface ReusableCanvasProps {
+export interface ReusableCanvasProps {
   points: Point[];
   aspectRatio: string;
   duration: number;
@@ -39,6 +39,8 @@ interface ReusableCanvasProps {
   labelFontSize?: number;
   labelFontWeight?: string;
   t?: (key: string) => string;
+  slidingEnabled?: boolean;
+  minVisiblePoints?: number;
 }
 
 export interface ReusableCanvasHandle {
@@ -72,6 +74,8 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
       watermark,
       labelFontSize = 24,
       labelFontWeight = "700",
+      slidingEnabled = false,
+      minVisiblePoints = 5,
       t = (key: string) => key,
     },
     ref,
@@ -131,11 +135,11 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
           }
 
           if (watermark.position.startsWith("top")) {
-            watermarkTopOffset = wmHeight + watermark.margin * 2;
+            watermarkTopOffset = wmHeight + watermark.margin * 0.5;
           }
 
           if (watermark.position.startsWith("bottom")) {
-            watermarkBottomOffset = wmHeight + watermark.margin * 2;
+            watermarkBottomOffset = wmHeight + watermark.margin * 0.5;
           }
         }
 
@@ -298,25 +302,134 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               ctx.fillText(line, x, y + padding + lineHeight * (i + 0.8));
             });
           }
-
           function animate(now: number) {
-            const progress = Math.min((now - startTime) / animationDuration, 1);
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / animationDuration, 1);
+
+            /* ===============================
+     ZOOM OUT PHASE CONTROL
+  =============================== */
+
+            const zoomDuration = 1200;
+            const slideFinished = progress >= 1;
+
+            const zoomProgress = slideFinished
+              ? Math.min((elapsed - animationDuration) / zoomDuration, 1)
+              : 0;
+
+            const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = "#fff";
             ctx.fillRect(0, 0, width, height);
 
-            // -------------------------
-            // DRAW WATERMARK FIRST IF TOP
-            // -------------------------
+            const totalPoints = points.length;
+
+            const visibleCount = slidingEnabled
+              ? Math.max(2, Math.min(minVisiblePoints, totalPoints))
+              : totalPoints;
+
+            const virtualGraphWidth =
+              slidingEnabled && totalPoints > visibleCount
+                ? (graphWidth / (visibleCount - 1)) * (totalPoints - 1)
+                : graphWidth;
+
+            const maxValue = Math.max(...points.map((p) => p.value));
+            const minValue = Math.min(...points.map((p) => p.value));
+
+            const calculatedPoints = points.map((point, i) => {
+              const x =
+                chartLeft + (i / (totalPoints - 1 || 1)) * virtualGraphWidth;
+
+              const y =
+                chartTop +
+                graphHeight -
+                ((point.value - minValue) / (maxValue - minValue || 1)) *
+                  graphHeight;
+
+              return {
+                x,
+                y,
+                value: point.value,
+                time: formatAMPM(point.time),
+              };
+            });
+
+            const segments: number[] = [];
+            let totalLength = 0;
+
+            for (let i = 0; i < calculatedPoints.length - 1; i++) {
+              const dx = calculatedPoints[i + 1].x - calculatedPoints[i].x;
+              const dy = calculatedPoints[i + 1].y - calculatedPoints[i].y;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              segments.push(len);
+              totalLength += len;
+            }
+
+            /* ===============================
+     PLANE POSITION
+  =============================== */
+
+            let planeX = calculatedPoints[0].x;
+            let planeY = calculatedPoints[0].y;
+            let angle = 0;
+            let remainPlane = totalLength * progress;
+
+            for (let i = 0; i < segments.length; i++) {
+              if (remainPlane <= 0) break;
+
+              const start = calculatedPoints[i];
+              const end = calculatedPoints[i + 1];
+              const seg = segments[i];
+
+              if (remainPlane >= seg) {
+                remainPlane -= seg;
+                planeX = end.x;
+                planeY = end.y;
+                angle = Math.atan2(end.y - start.y, end.x - start.x);
+              } else {
+                const r = remainPlane / seg;
+                planeX = start.x + (end.x - start.x) * r;
+                planeY = start.y + (end.y - start.y) * r;
+                angle = Math.atan2(end.y - start.y, end.x - start.x);
+                break;
+              }
+            }
+
+            /* ===============================
+     CAMERA FOLLOW
+  =============================== */
+
+            let cameraOffsetX = 0;
+
+            const leftBoundary = calculatedPoints[0].x;
+            const rightBoundary =
+              calculatedPoints[calculatedPoints.length - 1].x;
+
+            const totalTraverseWidth = rightBoundary - leftBoundary;
+
+            if (slidingEnabled && totalPoints > visibleCount) {
+              const totalScrollableWidth = rightBoundary - chartLeft;
+
+              const maxCameraOffset = totalScrollableWidth - graphWidth;
+
+              if (maxCameraOffset > 0) {
+                const targetOffset = planeX - chartLeft - graphWidth / 2;
+
+                cameraOffsetX = Math.max(
+                  0,
+                  Math.min(targetOffset, maxCameraOffset),
+                );
+              }
+            }
+
+            /* ===============================
+     HEADER + WATERMARK
+  =============================== */
 
             if (watermark?.enabled && watermark.position.startsWith("top")) {
               drawWatermark();
             }
-
-            // -------------------------
-            // TITLE + DESCRIPTION
-            // -------------------------
 
             let headerCursor = watermarkTopOffset
               ? 60 + watermarkTopOffset
@@ -336,9 +449,37 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               ctx.fillText(description, width / 2, headerCursor);
             }
 
-            // -------------------------
-            // DRAW LINE (BEHIND)
-            // -------------------------
+            /* ===============================
+     GRAPH TRANSFORM
+  =============================== */
+
+            ctx.save();
+
+            if (slideFinished && totalTraverseWidth > 0) {
+              // Fit to almost full canvas width (remove graph padding effect)
+              const usableCanvasWidth =
+                points.length <= 10 ? width * 0.85 : width * 0.9; // 2% margin each side
+
+              const fitScale = usableCanvasWidth / totalTraverseWidth;
+              const eased = easeOutCubic(zoomProgress);
+
+              const animatedScale = 1 + (fitScale - 1) * eased;
+
+              const traverseCenter = leftBoundary + totalTraverseWidth / 2;
+
+              const canvasCenterX = width / 2;
+              const canvasCenterY = chartTop + graphHeight / 2;
+
+              ctx.translate(canvasCenterX, canvasCenterY);
+              ctx.scale(animatedScale, animatedScale); // uniform scale
+              ctx.translate(-traverseCenter, -canvasCenterY);
+            } else {
+              ctx.translate(-cameraOffsetX, 0);
+            }
+
+            /* ===============================
+     DRAW PATH
+  =============================== */
 
             ctx.lineWidth = 6;
             ctx.lineCap = "round";
@@ -376,10 +517,6 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
             ctx.setLineDash([]);
 
-            // -------------------------
-            // BLACK DOTS
-            // -------------------------
-
             calculatedPoints.forEach((p) => {
               ctx.beginPath();
               ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
@@ -387,43 +524,25 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               ctx.fill();
             });
 
-            // -------------------------
-            // LABELS BELOW POINT
-            // -------------------------
+            /* ===============================
+     LABELS (RESTORED)
+  =============================== */
 
-            // -------------------------
-            // LABELS BELOW POINT (SMART COLLISION SAFE)
-            // -------------------------
-
-            // -------------------------
-            // LABELS (REFINED COLLISION SAFE)
-            // -------------------------
-
-            // -------------------------
-            // SIMPLE & CORRECT LABEL LOGIC
-            // -------------------------
-
-            const placedLabels: {
-              left: number;
-              right: number;
-              top: number;
-              bottom: number;
-            }[] = [];
-
+            const placedLabels: any[] = [];
             const baseOffset = 40;
             const spacing = 12;
 
             calculatedPoints.forEach((p, index) => {
               ctx.font = `${labelFontWeight} ${labelFontSize}px Inter, sans-serif`;
-
               ctx.textAlign = "center";
+
               const padding = 14;
               const lineHeight = labelFontSize * 1.4;
 
               const lines =
                 index === 0
                   ? [t("label.start"), `${p.value} (${p.time})`]
-                  : index === calculatedPoints.length - 1
+                  : index === totalPoints - 1
                     ? [t("label.finalDestination"), `${p.value} (${p.time})`]
                     : [`${p.value} (${p.time})`];
 
@@ -442,27 +561,23 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
                 bottom: top + boxHeight,
               };
 
-              const overlaps = (a: typeof box, b: typeof box) => {
-                return !(
+              const overlaps = (a: any, b: any) =>
+                !(
                   a.right <= b.left ||
                   a.left >= b.right ||
                   a.bottom <= b.top ||
                   a.top >= b.bottom
                 );
-              };
 
               let moved = true;
 
               while (moved) {
                 moved = false;
-
                 for (const placed of placedLabels) {
                   if (overlaps(box, placed)) {
                     top = placed.bottom + spacing;
-
                     box.top = top;
                     box.bottom = top + boxHeight;
-
                     moved = true;
                   }
                 }
@@ -473,7 +588,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               const bg =
                 index === 0
                   ? "#d1fae5"
-                  : index === calculatedPoints.length - 1
+                  : index === totalPoints - 1
                     ? "#fee2e2"
                     : "#f3f4f6";
 
@@ -487,34 +602,9 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
               drawLabelBox(p.x, box.top, lines, bg);
             });
 
-            // -------------------------
-            // AIRPLANE (TOPMOST)
-            // -------------------------
-
-            let planeX = calculatedPoints[0].x;
-            let planeY = calculatedPoints[0].y;
-            let angle = 0;
-            let remain = totalLength * progress;
-
-            for (let i = 0; i < segments.length; i++) {
-              if (remain <= 0) break;
-              const start = calculatedPoints[i];
-              const end = calculatedPoints[i + 1];
-              const seg = segments[i];
-
-              if (remain >= seg) {
-                remain -= seg;
-                planeX = end.x;
-                planeY = end.y;
-                angle = Math.atan2(end.y - start.y, end.x - start.x);
-              } else {
-                const r = remain / seg;
-                planeX = start.x + (end.x - start.x) * r;
-                planeY = start.y + (end.y - start.y) * r;
-                angle = Math.atan2(end.y - start.y, end.x - start.x);
-                break;
-              }
-            }
+            /* ===============================
+     PLANE
+  =============================== */
 
             const planeSize = 110;
             ctx.save();
@@ -529,73 +619,18 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
             );
             ctx.restore();
 
-            // -------------------------
-            // WATERMARK (TOPMOST FINAL LAYER)
-            // -------------------------
+            ctx.restore();
 
             if (watermark?.enabled) {
-              const margin = watermark.margin;
-
-              ctx.save();
-              ctx.globalAlpha = watermark.opacity;
-
-              // -------------------------
-              // IMAGE WATERMARK
-              // -------------------------
-              if (watermark.type === "image" && watermarkImageRef.current) {
-                const img = watermarkImageRef.current;
-
-                const maxWidth = width * watermark.sizeRatio;
-                const aspect = img.naturalWidth / img.naturalHeight;
-
-                let drawWidth = maxWidth;
-                let drawHeight = maxWidth / aspect;
-
-                const maxHeight = height * 0.2;
-
-                if (drawHeight > maxHeight) {
-                  drawHeight = maxHeight;
-                  drawWidth = maxHeight * aspect;
-                }
-
-                let x = margin;
-                let y = margin;
-
-                if (watermark.position.includes("right")) {
-                  x = width - drawWidth - margin;
-                }
-
-                if (watermark.position.includes("center")) {
-                  x = width / 2 - drawWidth / 2;
-                }
-
-                if (watermark.position.includes("bottom")) {
-                  y = height - drawHeight - margin;
-                }
-
-                ctx.drawImage(img, x, y, drawWidth, drawHeight);
-              }
-
-              // -------------------------
-              // TEXT WATERMARK
-              // -------------------------
-              if (
-                watermark?.enabled &&
-                watermark.position.startsWith("bottom")
-              ) {
-                drawWatermark();
-              }
-
-              ctx.restore();
+              drawWatermark();
             }
 
-            if (progress < 1) {
+            if (progress < 1 || zoomProgress < 1) {
               requestAnimationFrame(animate);
             } else {
-              setTimeout(() => recorder.stop(), 500);
+              setTimeout(() => recorder.stop(), 600);
             }
           }
-
           function drawWatermark() {
             if (!watermark?.enabled) return;
 

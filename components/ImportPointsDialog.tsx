@@ -118,7 +118,7 @@ export default function ImportPointsDialog({ onApply }: Props) {
   const updateCell = (
     index: number,
     field: "value" | "time",
-    value: string
+    value: string,
   ) => {
     const updated = [...parsedPoints];
     updated[index][field] = value;
@@ -164,27 +164,23 @@ export default function ImportPointsDialog({ onApply }: Props) {
             }}
           />
 
-          <Button
-            variant="outline"
-            onClick={() => fileRef.current?.click()}
-          >
+          <Button variant="outline" onClick={() => fileRef.current?.click()}>
             {t("importDialog.chooseFile")}
           </Button>
 
           {/* TABLE PREVIEW */}
           {parsedPoints.length > 0 && (
             <div className="mt-6 border rounded-md flex flex-col overflow-hidden">
-
               {/* Horizontal scroll wrapper */}
               <div className="overflow-x-auto">
-
                 {/* Vertical scroll (approx 5 rows visible) */}
                 <div className="max-h-80 overflow-y-auto">
-
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="w-12">{t("importDialog.index")}</TableHead>
+                        <TableHead className="w-12">
+                          {t("importDialog.index")}
+                        </TableHead>
                         <TableHead>{t("importDialog.value")}</TableHead>
                         <TableHead>{t("importDialog.time")}</TableHead>
                         <TableHead>{t("importDialog.status")}</TableHead>

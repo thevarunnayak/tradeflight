@@ -47,7 +47,7 @@
   "download.mp4": "MP4 ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
   "download.recording": "ರೆಕಾರ್ಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
   "download.converting": "ವೀಡಿಯೊ ಪರಿವರ್ತನೆ ನಡೆಯುತ್ತಿದೆ...",
-  
+
   "toast.presetSaved": "ಪ್ರೀಸೆಟ್ ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ",
   "toast.presetUpdated": "ಪ್ರೀಸೆಟ್ ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ",
   "toast.presetLoaded": "ಪ್ರೀಸೆಟ್ ಲೋಡ್ ಮಾಡಲಾಗಿದೆ",
@@ -75,6 +75,12 @@
 
   "preview.clickGenerate": "ಪೂರ್ವವೀಕ್ಷಣೆ ನೋಡಲು ಸೃಷ್ಟಿಸಿ ಒತ್ತಿರಿ",
 
+  "tour.import": "ಫೈಲ್ ಇಂಪೋರ್ಟ್ ಮಾಡಿ",
+  "tour.importDesc": "ಎಲ್ಲಾ ಆನಿಮೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಭರ್ತಿ ಮಾಡಲು ಒಂದು JSON ಫೈಲ್ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ।",
+  "tour.language": "ಭಾಷೆ ಆಯ್ಕೆ",
+  "tour.languageDesc": "ಇಲ್ಲಿಂದ TradeFligh ನ ಇಂಟರ್‌ಫೇಸ್ ಭಾಷೆ ಬದಲಾಯಿಸಿ।",
+  "tour.loadPreset": "ಪ್ರೀಸೆಟ್ ಲೋಡ್ ಮಾಡಿ",
+  "tour.loadPresetDesc": "ತಯಾರಿಸಿದ ಆನಿಮೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತ್ವರಿತವಾಗಿ ಅನ್ವಯಿಸಲು ಪೂರ್ವನಿರ್ಧಾರಿತ ಪ್ರೀಸೆಟ್ ಆಯ್ಕೆ ಮಾಡಿ।",
   "tour.title": "ಶೀರ್ಷಿಕೆ",
   "tour.titleDesc": "ನಿಮ್ಮ ಟ್ರೇಡ್ ಆನಿಮೇಶನ್‌ಗೆ ಶೀರ್ಷಿಕೆ ಸೇರಿಸಿ",
   "tour.description": "ವಿವರಣೆ",
@@ -83,8 +89,8 @@
   "tour.pointsDesc": "ಹೆಚ್ಚುತ್ತಾ ಹೋಗುವ ಸಮಯ ಅಂತರದೊಂದಿಗೆ ಮೌಲ್ಯದ ಪಾಯಿಂಟ್‌ಗಳನ್ನು ಸೇರಿಸಿ",
   "tour.animation": "ಆನಿಮೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
   "tour.animationDesc": "ಅವಧಿ, ಆಸ್ಪೆಕ್ಟ್ ಅನುಪಾತ ಮತ್ತು ಲೇಬಲ್ ಶೈಲಿ ಸೆಟ್ ಮಾಡಿ",
-  "tour.watermark": "ವಾಟರ್‌ಮಾರ್ಕ್",
-  "tour.watermarkDesc": "ಚಿತ್ರ ಅಥವಾ ಪಠ್ಯ ವಾಟರ್‌ಮಾರ್ಕ್ ಬಳಸಿ ಬ್ರ್ಯಾಂಡಿಂಗ್ ಸೇರಿಸಿ",
+  "tour.watermark": "ವಾಟರ್‌ಮಾರ್ಕ್ ಮತ್ತು ಸ್ಲೈಡಿಂಗ್ ಆನಿಮೇಶನ್",
+  "tour.watermarkDesc": "ಚಿತ್ರ ಅಥವಾ ಪಠ್ಯ ವಾಟರ್‌ಮಾರ್ಕ್ ಬಳಸಿ ಬ್ರ್ಯಾಂಡಿಂಗ್ ಸೇರಿಸಿ ಮತ್ತು ಸ್ಲೈಡಿಂಗ್ ಆನಿಮೇಶನ್.",
   "tour.generate": "ಸೃಷ್ಟಿಸಿ",
   "tour.generateDesc": "ನಿಮ್ಮ ಆನಿಮೇಶನ್ ಪೂರ್ವವೀಕ್ಷಣೆ ಸೃಷ್ಟಿಸಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ",
   "tour.download": "ಡೌನ್‌ಲೋಡ್",
@@ -118,6 +124,11 @@
   "importDialog.apply": "ಅನ್ವಯಿಸಿ",
   "toast.pointsApplied": "ಪಾಯಿಂಟ್‌ಗಳನ್ನು ಫಾರ್ಮ್‌ಗೆ ಅನ್ವಯಿಸಲಾಗಿದೆ",
 
+  "settings.slidingAnimation": "ಸ್ಲೈಡಿಂಗ್ ಅನಿಮೇಶನ್",
+  "settings.minimumVisiblePoints": "ಕನಿಷ್ಟ ದೃಶ್ಯ ಪಾಯಿಂಟ್‌ಗಳು",
+  "settings.minimum": "ಕನಿಷ್ಟ",
+  "settings.maximum": "ಗರಿಷ್ಠ",
+
   "preset.search": "ಪ್ರೀಸೆಟ್ ಹುಡುಕಿ...",
   "preset.noMatching": "ಯಾವುದೇ ಹೊಂದುವ ಪ್ರೀಸೆಟ್ ಕಂಡುಬಂದಿಲ್ಲ",
   "preset.points": "ಪಾಯಿಂಟ್‌ಗಳು",
@@ -125,7 +136,7 @@
   "preset.delete": "ಅಳಿಸಿ",
   "preset.saved": "ಉಳಿಸಿದ ಪ್ರೀಸೆಟ್‌ಗಳು",
 
-    "form.infoSection": "ಮಾಹಿತಿ",
+  "form.infoSection": "ಮಾಹಿತಿ",
   "form.pointsSection": "ಅಂಕಗಳು",
   "form.settingsSection": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
 }

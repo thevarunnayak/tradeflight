@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type WatermarkConfig = {
   enabled: boolean;
@@ -41,6 +42,12 @@ type Props = {
   setLabelFontWeight: (v: string) => void;
   watermark: WatermarkConfig;
   setWatermark: (v: WatermarkConfig) => void;
+  slidingEnabled: boolean;
+  setSlidingEnabled: (v: boolean) => void;
+  minVisiblePoints: number;
+  setMinVisiblePoints: (v: number) => void;
+  totalPoints: number;
+
   t: any;
 };
 
@@ -55,6 +62,11 @@ export default function SettingsSection({
   setLabelFontWeight,
   watermark,
   setWatermark,
+  slidingEnabled,
+  setSlidingEnabled,
+  minVisiblePoints,
+  setMinVisiblePoints,
+  totalPoints,
   t,
 }: Props) {
   return (
@@ -161,15 +173,17 @@ export default function SettingsSection({
         </Label>
 
         {/* Enable Toggle */}
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
+        <div className="flex items-center space-x-3">
+          <Checkbox
+            id="watermarkEnabled"
             checked={watermark.enabled}
-            onChange={(e) =>
-              setWatermark({ ...watermark, enabled: e.target.checked })
+            onCheckedChange={(checked) =>
+              setWatermark({ ...watermark, enabled: !!checked })
             }
           />
-          <span className="text-sm">{t("watermark.enable")}</span>
+          <Label htmlFor="watermarkEnabled" className="text-sm cursor-pointer">
+            {t("watermark.enable")}
+          </Label>
         </div>
 
         {watermark.enabled && (
@@ -220,12 +234,24 @@ export default function SettingsSection({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="top-left">{t("form.topLeft")}</SelectItem>
-                    <SelectItem value="top-center">{t("form.topCenter")}</SelectItem>
-                    <SelectItem value="top-right">{t("form.topRight")}</SelectItem>
-                    <SelectItem value="bottom-left">{t("form.bottomLeft")}</SelectItem>
-                    <SelectItem value="bottom-center">{t("form.bottomCenter")}</SelectItem>
-                    <SelectItem value="bottom-right">{t("form.bottomRight")}</SelectItem>
+                    <SelectItem value="top-left">
+                      {t("form.topLeft")}
+                    </SelectItem>
+                    <SelectItem value="top-center">
+                      {t("form.topCenter")}
+                    </SelectItem>
+                    <SelectItem value="top-right">
+                      {t("form.topRight")}
+                    </SelectItem>
+                    <SelectItem value="bottom-left">
+                      {t("form.bottomLeft")}
+                    </SelectItem>
+                    <SelectItem value="bottom-center">
+                      {t("form.bottomCenter")}
+                    </SelectItem>
+                    <SelectItem value="bottom-right">
+                      {t("form.bottomRight")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -258,7 +284,7 @@ export default function SettingsSection({
                         ...watermark,
                         sizeRatio: Math.min(
                           1,
-                          Math.max(0.05, Number(e.target.value))
+                          Math.max(0.05, Number(e.target.value)),
                         ),
                       })
                     }
@@ -295,7 +321,7 @@ export default function SettingsSection({
                         ...watermark,
                         opacity: Math.min(
                           1,
-                          Math.max(0.1, Number(e.target.value))
+                          Math.max(0.1, Number(e.target.value)),
                         ),
                       })
                     }
@@ -368,6 +394,54 @@ export default function SettingsSection({
             )}
           </>
         )}
+        <div className="mt-4 space-y-4">
+          {/* Sliding Toggle */}
+          <div className="flex items-center space-x-3">
+            <Checkbox
+              id="slidingAnimation"
+              checked={slidingEnabled}
+              onCheckedChange={(checked) => setSlidingEnabled(!!checked)}
+            />
+            <Label
+              htmlFor="slidingAnimation"
+              className="text-sm font-medium cursor-pointer"
+            >
+              {t("settings.slidingAnimation")}
+            </Label>
+          </div>
+
+          {/* Min Points Input */}
+          {slidingEnabled && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                {t("settings.minimumVisiblePoints")}
+              </Label>
+
+              <Input
+                type="number"
+                min={2}
+                max={totalPoints}
+                value={minVisiblePoints}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+
+                  if (value < 2) {
+                    setMinVisiblePoints(2);
+                  } else if (value > totalPoints) {
+                    setMinVisiblePoints(totalPoints);
+                  } else {
+                    setMinVisiblePoints(value);
+                  }
+                }}
+                className="w-32"
+              />
+
+              <p className="text-xs text-muted-foreground">
+                {t("settings.minimum")} 2, {t("settings.maximum")} {totalPoints}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

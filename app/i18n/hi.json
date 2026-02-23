@@ -75,6 +75,12 @@
 
   "preview.clickGenerate": "पूर्वावलोकन देखने के लिए 'तैयार करें' पर क्लिक करें",
 
+  "tour.import": "फ़ाइल आयात करें",
+  "tour.importDesc": "सभी एनिमेशन सेटिंग्स को स्वचालित रूप से भरने के लिए एक JSON फ़ाइल अपलोड करें।",
+  "tour.language": "भाषा चयन",
+  "tour.languageDesc": "यहाँ से TradeFlighт की इंटरफेस भाषा बदलें।",
+  "tour.loadPreset": "प्रीसेट लोड करें",
+  "tour.loadPresetDesc": "तैयार एनिमेशन सेटिंग्स को जल्दी लागू करने के लिए एक पूर्वनिर्धारित प्रीसेट चुनें।",
   "tour.title": "शीर्षक",
   "tour.titleDesc": "अपने ट्रेड एनिमेशन के लिए एक शीर्षक जोड़ें",
   "tour.description": "विवरण",
@@ -83,8 +89,8 @@
   "tour.pointsDesc": "बढ़ते समय क्रम में मूल्य पॉइंट्स जोड़ें",
   "tour.animation": "एनिमेशन सेटिंग्स",
   "tour.animationDesc": "अवधि, आस्पेक्ट अनुपात और लेबल स्टाइल सेट करें",
-  "tour.watermark": "वॉटरमार्क",
-  "tour.watermarkDesc": "छवि या पाठ वॉटरमार्क का उपयोग करके ब्रांडिंग जोड़ें",
+  "tour.watermark": "वॉटरमार्क और स्लाइडिंग एनिमेशन",
+  "tour.watermarkDesc": "छवि या पाठ वॉटरमार्क का उपयोग करके ब्रांडिंग जोड़ें और स्लाइडिंग एनिमेशन।",
   "tour.generate": "तैयार करें",
   "tour.generateDesc": "अपने एनिमेशन का पूर्वावलोकन तैयार करने के लिए यहाँ क्लिक करें",
   "tour.download": "डाउनलोड",
@@ -118,6 +124,11 @@
   "importDialog.apply": "लागू करें",
   "toast.pointsApplied": "पॉइंट्स फॉर्म में लागू किए गए",
 
+  "settings.slidingAnimation": "स्लाइडिंग एनीमेशन",
+  "settings.minimumVisiblePoints": "न्यूनतम दृश्यमान पॉइंट्स",
+  "settings.minimum": "न्यूनतम",
+  "settings.maximum": "अधिकतम",
+
   "preset.search": "प्रीसेट खोजें...",
   "preset.noMatching": "कोई मेल खाता हुआ प्रीसेट नहीं मिला",
   "preset.points": "पॉइंट्स",
@@ -125,8 +136,7 @@
   "preset.delete": "हटाएं",
   "preset.saved": "सहेजे गए प्रीसेट्स",
 
-    "form.infoSection": "जानकारी",
+  "form.infoSection": "जानकारी",
   "form.pointsSection": "बिंदु",
   "form.settingsSection": "सेटिंग्स"
-  
 }
