@@ -104,10 +104,30 @@
   "label.start": "START",
   "label.finalDestination": "FINAL DESTINATION",
 
+  "importDialog.title": "Import Points",
+  "importDialog.openButton": "Import File",
+  "importDialog.chooseFile": "Choose File",
+  "importDialog.invalidFileFormat": "Invalid file format",
+  "importDialog.fileParsed": "File parsed successfully",
+  "importDialog.index": "#",
+  "importDialog.value": "Value",
+  "importDialog.time": "Time",
+  "importDialog.status": "Status",
+  "importDialog.invalid": "Invalid",
+  "importDialog.valid": "Valid",
+  "importDialog.pointsDetected": "points detected",
+  "importDialog.fixInvalidRows": "• Fix invalid rows before applying",
+  "importDialog.apply": "Apply",
+  "toast.pointsApplied": "Points applied to form",
+
   "preset.search": "Search presets...",
   "preset.noMatching": "No matching presets found.",
   "preset.points": "points",
   "preset.load": "Load",
   "preset.delete": "Delete",
-  "preset.saved": "Saved Presets"
+  "preset.saved": "Saved Presets",
+
+  "form.infoSection": "Information",
+  "form.pointsSection": "Points",
+  "form.settingsSection": "Settings"
 }

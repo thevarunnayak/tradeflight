@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, PlayCircle, Clock, Ratio, List, Search } from "lucide-react";
+import { Card } from "./ui/card";
 
 type Preset = {
   id: string;
@@ -43,7 +44,7 @@ export default function LoadPresetLayout({
   return (
     <div className="space-y-4">
       {/* SEARCH INPUT */}
-      <div className="relative">
+      <div className="relative pr-2">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <Input
           placeholder={t("preset.search")}
@@ -54,20 +55,21 @@ export default function LoadPresetLayout({
       </div>
 
       {/* LIST */}
-      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+      <div className="space-y-4 max-h-105 overflow-y-auto pr-2">
         {filteredPresets.length === 0 ? (
           <div className="py-10 text-center text-sm text-zinc-400">
             {t("preset.noMatching")}
           </div>
         ) : (
           filteredPresets.map((preset) => (
-            <div
+            <Card
               key={preset.id}
               className="
                 rounded-xl border border-zinc-200
                 bg-white/70 backdrop-blur-sm
                 p-4 transition-all duration-200
                 hover:shadow-md hover:border-zinc-300
+                gap-1 w-full
               "
             >
               {/* Header */}
@@ -138,7 +140,7 @@ export default function LoadPresetLayout({
                   {t("preset.delete")}
                 </Button>
               </div>
-            </div>
+            </Card>
           ))
         )}
       </div>

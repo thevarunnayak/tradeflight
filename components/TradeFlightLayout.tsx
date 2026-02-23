@@ -28,6 +28,17 @@ import Image from "next/image";
 import { Slider } from "./ui/slider";
 import { driver } from "driver.js";
 import { useTranslation } from "@/app/i18n/languageProvider";
+import ImportPointsDialog from "./ImportPointsDialog";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import InfoSection from "./InfoSection";
+import PointsSection from "./PointsSection";
+import SettingsSection from "./SettingsSection";
 
 type WatermarkConfig = {
   enabled: boolean;
@@ -440,7 +451,7 @@ export default function TradeFlightLayout() {
   }, [t]);
 
   return (
-    <div className="space-y-8 p-5 md:p-8">
+    <div className="space-y-2 p-5 md:p-8">
       <Card className="p-6 space-y-6 bg-white border border-zinc-200 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Title */}
@@ -481,475 +492,92 @@ export default function TradeFlightLayout() {
           </div>
         </div>
 
+        <div className="w-full flex justify-end">
+            <ImportPointsDialog
+    onApply={(newPoints) => {
+      validateTimes(newPoints);
+      setPoints(newPoints);
+    }}
+  />
+        </div>
+
         {/* FORM (UNCHANGED FROM YOUR ORIGINAL) */}
+        <div className="py-4">
 
-        <div className="space-y-2 tour-title">
-          <Label className="text-base font-semibold text-zinc-800">
-            {t("form.title")}
-          </Label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+<Accordion
+  type="multiple"
+  defaultValue={["info", "points", "settings"]}
+  className="w-full space-y-4 overflow-hidden"
+>
+  {/* ================= INFO ================= */}
+  <AccordionItem
+    value="info"
+    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+  >
+    <AccordionTrigger className="text-base font-semibold">
+      {t("form.infoSection")}
+    </AccordionTrigger>
+
+    <AccordionContent className="pt-4 pb-6">
+      <InfoSection
+        title={title}
+        setTitle={setTitle}
+        description={description}
+        setDescription={setDescription}
+        t={t}
+      />
+    </AccordionContent>
+  </AccordionItem>
+
+  {/* ================= POINTS ================= */}
+  <AccordionItem
+    value="points"
+    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+  >
+    <AccordionTrigger className="text-base font-semibold">
+      {t("form.pointsSection")}
+    </AccordionTrigger>
+
+    <AccordionContent className="pt-4 pb-6">
+      <PointsSection
+        points={points}
+        updatePoint={updatePoint}
+        moveValue={moveValue}
+        deletePoint={deletePoint}
+        addPoint={addPoint}
+        timeError={timeError}
+        t={t}
+      />
+    </AccordionContent>
+  </AccordionItem>
+
+  {/* ================= SETTINGS ================= */}
+  <AccordionItem
+    value="settings"
+    className="rounded-xl border border-zinc-200 bg-zinc-50 px-5"
+  >
+    <AccordionTrigger className="text-base font-semibold">
+      {t("form.settingsSection")}
+    </AccordionTrigger>
+
+    <AccordionContent className="pt-4 pb-6">
+      <SettingsSection
+        durationInput={durationInput}
+        setDurationInput={setDurationInput}
+        aspectRatio={aspectRatio}
+        setAspectRatio={setAspectRatio}
+        labelFontSize={labelFontSize}
+        setLabelFontSize={setLabelFontSize}
+        labelFontWeight={labelFontWeight}
+        setLabelFontWeight={setLabelFontWeight}
+        watermark={watermark}
+        setWatermark={setWatermark}
+        t={t}
+      />
+    </AccordionContent>
+  </AccordionItem>
+</Accordion>
         </div>
-
-        <div className="space-y-2 tour-description">
-          <Label className="text-base font-semibold text-zinc-800">
-            {t("form.description")}
-          </Label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-
-        {/* Points */}
-        <div className="space-y-4 tour-points">
-          <Label className="text-base font-semibold text-zinc-800">
-            {t("form.points")}
-          </Label>
-          {points.map((point, index) => {
-            const isInvalid =
-              index > 0 &&
-              timeToMinutes(point.time) <=
-                timeToMinutes(points[index - 1].time);
-
-            return (
-              <div key={index} className="space-y-4">
-                <div className="grid gap-4 items-center grid-cols-1 md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_120px]">
-                  <div className="flex items-center gap-4 justify-start">
-                    <div className="flex flex-col gap-2">
-                      <button
-                        type="button"
-                        onClick={() => moveValue(index, "up")}
-                        disabled={index === 0}
-                        className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30 rounded-full border border-zinc-300 hover:border-zinc-700 p-1"
-                      >
-                        <ArrowUp className="w-3 h-3" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => moveValue(index, "down")}
-                        disabled={index === points.length - 1}
-                        className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30 rounded-full border border-zinc-300 hover:border-zinc-700 p-1"
-                      >
-                        <ArrowDown className="w-3 h-3" />
-                      </button>
-                    </div>
-
-                    <span className="text-sm text-zinc-500">
-                      {t("form.point")} {index + 1}
-                    </span>
-                  </div>
-
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={point.value === 0 ? "" : point.value}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === "") {
-                        updatePoint(index, "value", "0");
-                        return;
-                      }
-                      if (/^\d*\.?\d*$/.test(raw)) {
-                        updatePoint(index, "value", raw);
-                      }
-                    }}
-                  />
-
-                  <Input
-                    type="time"
-                    value={point.time}
-                    onChange={(e) => updatePoint(index, "time", e.target.value)}
-                    className={`min-w-0 w-full appearance-none ${
-                      isInvalid
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }`}
-                  />
-
-                  {index >= 2 && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deletePoint(index)}
-                      className="flex items-center gap-2 w-full md:w-auto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      {t("form.delete")}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Separator */}
-                {index !== points.length - 1 && (
-                  <div className="border-b border-zinc-200" />
-                )}
-              </div>
-            );
-          })}
-
-          {timeError && <p className="text-sm text-red-500">{timeError}</p>}
-
-          <Button
-            variant="secondary"
-            onClick={addPoint}
-            disabled={!!timeError}
-            className="w-full"
-          >
-            + {t("form.addPoint")}
-          </Button>
-        </div>
-
-        {/* =============================== */}
-        {/* Animation & Label Controls */}
-        {/* =============================== */}
-
-        <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end tour-animation">
-          {/* Duration */}
-          <div className="flex flex-col gap-2 md:w-40">
-            <Label className="text-base font-semibold text-zinc-800">
-              {t("form.duration")}
-            </Label>
-            <Input
-              type="number"
-              value={durationInput}
-              min={1}
-              onChange={(e) => setDurationInput(e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          {/* Aspect Ratio */}
-          <div className="flex flex-col gap-2 md:w-40">
-            <Label className="text-base font-semibold text-zinc-800">
-              {t("form.aspectRatio")}
-            </Label>
-            <Select value={aspectRatio} onValueChange={setAspectRatio}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="16:9">16:9</SelectItem>
-                <SelectItem value="1:1">1:1</SelectItem>
-                <SelectItem value="9:16">9:16</SelectItem>
-                <SelectItem value="4:5">4:5</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Font Size */}
-          <div className="flex flex-col gap-3 md:w-64">
-            <Label className="text-base font-semibold text-zinc-800">
-              {t("form.labelSize")}
-            </Label>
-
-            <div className="flex items-center gap-3">
-              <div className="w-40">
-                <Slider
-                  min={8}
-                  max={64}
-                  step={1}
-                  value={[labelFontSize]}
-                  onValueChange={(value) => setLabelFontSize(value[0])}
-                />
-              </div>
-
-              <Input
-                type="number"
-                min={8}
-                max={64}
-                value={labelFontSize}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  if (!isNaN(val)) {
-                    const clamped = Math.min(64, Math.max(8, val));
-                    setLabelFontSize(clamped);
-                  }
-                }}
-                className="w-20"
-              />
-            </div>
-          </div>
-
-          {/* Font Weight */}
-          <div className="flex flex-col gap-2 md:w-48">
-            <Label className="text-base font-semibold text-zinc-800">
-              {t("form.labelWeight")}
-            </Label>
-
-            <Select value={labelFontWeight} onValueChange={setLabelFontWeight}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="100">
-                  <span className="font-thin">{t("form.labelFontThin")}</span>
-                </SelectItem>
-                <SelectItem value="300">
-                  <span className="font-light">{t("form.labelFontLight")}</span>
-                </SelectItem>
-                <SelectItem value="500">
-                  <span className="font-medium">
-                    {t("form.labelFontNormal")}
-                  </span>
-                </SelectItem>
-                <SelectItem value="700">
-                  <span className="font-bold">{t("form.labelFontBold")}</span>
-                </SelectItem>
-                <SelectItem value="900">
-                  <span className="font-black">{t("form.labelFontThick")}</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* WATERMARK CONTROLS */}
-        <div className="space-y-4 tour-watermark">
-          <Label className="text-base font-semibold text-zinc-800">
-            {t("watermark.title")}
-          </Label>
-
-          {/* Enable Toggle */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={watermark.enabled}
-              onChange={(e) =>
-                setWatermark({ ...watermark, enabled: e.target.checked })
-              }
-            />
-            <span className="text-sm">{t("watermark.enable")}</span>
-          </div>
-
-          {watermark.enabled && (
-            <>
-              {/* WATERMARK CONTROLS ROW */}
-              <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-between md:items-end">
-                {/* Type */}
-                <div className="flex flex-col gap-2 md:w-48">
-                  <Label className="text-base font-semibold text-zinc-800">
-                    {t("watermark.type")}
-                  </Label>
-                  <Select
-                    value={watermark.type}
-                    onValueChange={(value) =>
-                      setWatermark({
-                        ...watermark,
-                        type: value as "image" | "text",
-                        imageUrl: value === "image" ? watermark.imageUrl : "",
-                        text: value === "text" ? watermark.text : "",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="image">{t("form.image")}</SelectItem>
-                      <SelectItem value="text">{t("form.text")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Position */}
-                <div className="flex flex-col gap-2 md:w-56">
-                  <Label className="text-base font-semibold text-zinc-800">
-                    {t("watermark.position")}
-                  </Label>
-                  <Select
-                    value={watermark.position}
-                    onValueChange={(value) =>
-                      setWatermark({
-                        ...watermark,
-                        position: value as
-                          | "top-left"
-                          | "top-center"
-                          | "top-right"
-                          | "bottom-left"
-                          | "bottom-center"
-                          | "bottom-right",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="top-left">
-                        {t("form.topLeft")}
-                      </SelectItem>
-                      <SelectItem value="top-center">
-                        {t("form.topCenter")}
-                      </SelectItem>
-                      <SelectItem value="top-right">
-                        {t("form.topRight")}
-                      </SelectItem>
-                      <SelectItem value="bottom-left">
-                        {t("form.bottomLeft")}
-                      </SelectItem>
-                      <SelectItem value="bottom-center">
-                        {t("form.bottomCenter")}
-                      </SelectItem>
-                      <SelectItem value="bottom-right">
-                        {t("form.bottomRight")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Size */}
-                <div className="flex flex-col gap-3 md:w-64">
-                  <Label className="text-base font-semibold text-zinc-800">
-                    {t("watermark.size")}
-                  </Label>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Slider
-                        min={0.05}
-                        max={1}
-                        step={0.01}
-                        value={[watermark.sizeRatio]}
-                        onValueChange={(value) =>
-                          setWatermark({ ...watermark, sizeRatio: value[0] })
-                        }
-                      />
-                    </div>
-
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min={0.05}
-                      max={1}
-                      value={watermark.sizeRatio}
-                      onChange={(e) =>
-                        setWatermark({
-                          ...watermark,
-                          sizeRatio: Math.min(
-                            1,
-                            Math.max(0.05, Number(e.target.value)),
-                          ),
-                        })
-                      }
-                      className="w-20"
-                    />
-                  </div>
-                </div>
-
-                {/* Opacity */}
-                <div className="flex flex-col gap-3 md:w-64">
-                  <Label className="text-base font-semibold text-zinc-800">
-                    {t("watermark.opacity")}
-                  </Label>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Slider
-                        min={0.1}
-                        max={1}
-                        step={0.05}
-                        value={[watermark.opacity]}
-                        onValueChange={(value) =>
-                          setWatermark({ ...watermark, opacity: value[0] })
-                        }
-                      />
-                    </div>
-
-                    <Input
-                      type="number"
-                      step="0.05"
-                      min={0.1}
-                      max={1}
-                      value={watermark.opacity}
-                      onChange={(e) =>
-                        setWatermark({
-                          ...watermark,
-                          opacity: Math.min(
-                            1,
-                            Math.max(0.1, Number(e.target.value)),
-                          ),
-                        })
-                      }
-                      className="w-20"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* IMAGE Upload */}
-              {watermark.type === "image" && (
-                <div className="space-y-3">
-                  {/* Preview if image exists */}
-                  {watermark.imageUrl && (
-                    <div className="flex items-center gap-4">
-                      <Image
-                        src={watermark.imageUrl}
-                        alt={t("watermark.imagePreview")}
-                        width={120}
-                        height={40}
-                        unoptimized
-                        className="h-10 w-auto object-contain border rounded px-2 py-1 bg-white"
-                      />
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setWatermark({
-                            ...watermark,
-                            imageUrl: "",
-                          })
-                        }
-                      >
-                        {t("form.remove")}
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Upload Button */}
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (!e.target.files?.[0]) return;
-
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        setWatermark({
-                          ...watermark,
-                          imageUrl: reader.result as string,
-                        });
-                      };
-                      reader.readAsDataURL(e.target.files[0]);
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* TEXT Input */}
-              {watermark.type === "text" && (
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold text-zinc-800">
-                    {t("form.watermarkText")}
-                  </Label>
-                  <Input
-                    placeholder={t("form.watermarkPlaceholder")}
-                    maxLength={30}
-                    value={watermark.text || ""}
-                    onChange={(e) =>
-                      setWatermark({
-                        ...watermark,
-                        text: e.target.value.slice(0, 30),
-                      })
-                    }
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
         {/* Generate + Save */}
         <div className="flex flex-col gap-3 md:flex-row">
           <Button

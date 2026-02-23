@@ -1,5 +1,5 @@
-import TradeFlightLayout from "@/components/TradeFlightLayout"
+import TradeFlightClient from "@/components/TradeFlightClient"
 
 export default function Home() {
-  return <TradeFlightLayout />
+  return <TradeFlightClient />
 }

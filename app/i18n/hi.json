@@ -102,10 +102,31 @@
   "label.start": "शुरुआत",
   "label.finalDestination": "अंतिम गंतव्य",
 
+  "importDialog.title": "पॉइंट्स आयात करें",
+  "importDialog.openButton": "फ़ाइल आयात करें",
+  "importDialog.chooseFile": "फ़ाइल चुनें",
+  "importDialog.invalidFileFormat": "अमान्य फ़ाइल प्रारूप",
+  "importDialog.fileParsed": "फ़ाइल सफलतापूर्वक पार्स हुई",
+  "importDialog.index": "#",
+  "importDialog.value": "मूल्य",
+  "importDialog.time": "समय",
+  "importDialog.status": "स्थिति",
+  "importDialog.invalid": "अमान्य",
+  "importDialog.valid": "वैध",
+  "importDialog.pointsDetected": "पॉइंट्स पाए गए",
+  "importDialog.fixInvalidRows": "• लागू करने से पहले अमान्य पंक्तियों को ठीक करें",
+  "importDialog.apply": "लागू करें",
+  "toast.pointsApplied": "पॉइंट्स फॉर्म में लागू किए गए",
+
   "preset.search": "प्रीसेट खोजें...",
   "preset.noMatching": "कोई मेल खाता हुआ प्रीसेट नहीं मिला",
   "preset.points": "पॉइंट्स",
   "preset.load": "लोड करें",
   "preset.delete": "हटाएं",
-  "preset.saved": "सहेजे गए प्रीसेट्स"
+  "preset.saved": "सहेजे गए प्रीसेट्स",
+
+    "form.infoSection": "जानकारी",
+  "form.pointsSection": "बिंदु",
+  "form.settingsSection": "सेटिंग्स"
+  
 }

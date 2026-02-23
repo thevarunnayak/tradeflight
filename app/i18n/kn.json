@@ -102,10 +102,30 @@
   "label.start": "ಪ್ರಾರಂಭ",
   "label.finalDestination": "ಅಂತಿಮ ಗಮ್ಯಸ್ಥಾನ",
 
+  "importDialog.title": "ಪಾಯಿಂಟ್‌ಗಳನ್ನು ಆಮದು ಮಾಡಿ",
+  "importDialog.openButton": "ಫೈಲ್ ಇಂಪೋರ್ಟ್ ಮಾಡಿ",
+  "importDialog.chooseFile": "ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ",
+  "importDialog.invalidFileFormat": "ಅಮಾನ್ಯ ಫೈಲ್ ಫಾರ್ಮ್ಯಾಟ್",
+  "importDialog.fileParsed": "ಫೈಲ್ ಯಶಸ್ವಿಯಾಗಿ ಪಾರ್ಸ್ ಮಾಡಲಾಗಿದೆ",
+  "importDialog.index": "#",
+  "importDialog.value": "ಮೌಲ್ಯ",
+  "importDialog.time": "ಸಮಯ",
+  "importDialog.status": "ಸ್ಥಿತಿ",
+  "importDialog.invalid": "ಅಮಾನ್ಯ",
+  "importDialog.valid": "ಮಾನ್ಯ",
+  "importDialog.pointsDetected": "ಪಾಯಿಂಟ್‌ಗಳು ಕಂಡುಬಂದಿವೆ",
+  "importDialog.fixInvalidRows": "• ಅನ್ವಯಿಸುವ ಮೊದಲು ಅಮಾನ್ಯ ಸಾಲುಗಳನ್ನು ಸರಿಪಡಿಸಿ",
+  "importDialog.apply": "ಅನ್ವಯಿಸಿ",
+  "toast.pointsApplied": "ಪಾಯಿಂಟ್‌ಗಳನ್ನು ಫಾರ್ಮ್‌ಗೆ ಅನ್ವಯಿಸಲಾಗಿದೆ",
+
   "preset.search": "ಪ್ರೀಸೆಟ್ ಹುಡುಕಿ...",
   "preset.noMatching": "ಯಾವುದೇ ಹೊಂದುವ ಪ್ರೀಸೆಟ್ ಕಂಡುಬಂದಿಲ್ಲ",
   "preset.points": "ಪಾಯಿಂಟ್‌ಗಳು",
   "preset.load": "ಲೋಡ್ ಮಾಡಿ",
   "preset.delete": "ಅಳಿಸಿ",
-  "preset.saved": "ಉಳಿಸಿದ ಪ್ರೀಸೆಟ್‌ಗಳು"
+  "preset.saved": "ಉಳಿಸಿದ ಪ್ರೀಸೆಟ್‌ಗಳು",
+
+    "form.infoSection": "ಮಾಹಿತಿ",
+  "form.pointsSection": "ಅಂಕಗಳು",
+  "form.settingsSection": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
 }
