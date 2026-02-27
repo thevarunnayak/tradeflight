@@ -455,7 +455,7 @@ const ReusableCanvas = forwardRef<ReusableCanvasHandle, ReusableCanvasProps>(
 
             ctx.save();
 
-            if (slideFinished && totalTraverseWidth > 0) {
+            if (slidingEnabled && slideFinished && totalTraverseWidth > 0) {
               // Fit to almost full canvas width (remove graph padding effect)
               const usableCanvasWidth =
                 points.length <= 10 ? width * 0.85 : width * 0.9; // 2% margin each side
